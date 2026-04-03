@@ -1,5 +1,11 @@
-import { pressLogos } from '@/data/products'
-import { PressLogo } from '@/components/ui/PressLogo'
+const logos = [
+  { name: 'Vogue', src: '/images/press/vogue.svg', width: 120 },
+  { name: 'Allure', src: '/images/press/allure.svg', width: 110 },
+  { name: "Harper's Bazaar", src: '/images/press/harpers-bazaar.svg', width: 180 },
+  { name: 'Elle', src: '/images/press/elle.svg', width: 90 },
+  { name: 'Cosmopolitan', src: '/images/press/cosmopolitan.svg', width: 170 },
+  { name: 'InStyle', src: '/images/press/instyle.svg', width: 110 },
+]
 
 export default function PressBar() {
   return (
@@ -14,12 +20,18 @@ export default function PressBar() {
 
           {/* Logos */}
           <div className="flex flex-wrap justify-center sm:justify-start items-center sm:pl-8 gap-0">
-            {pressLogos.map((logo, index) => (
-              <div key={logo} className="flex items-center">
+            {logos.map((logo, index) => (
+              <div key={logo.name} className="flex items-center">
                 <div className="px-5 py-1">
-                  <PressLogo name={logo} />
+                  <img
+                    src={logo.src}
+                    alt={logo.name}
+                    width={logo.width}
+                    height={40}
+                    className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity"
+                  />
                 </div>
-                {index < pressLogos.length - 1 && (
+                {index < logos.length - 1 && (
                   <span className="block h-5 w-px bg-border hidden sm:block" />
                 )}
               </div>

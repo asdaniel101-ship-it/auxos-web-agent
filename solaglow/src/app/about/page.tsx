@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { PressLogo } from '@/components/ui/PressLogo'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -265,11 +264,16 @@ export default function AboutPage() {
             As Seen In
           </p>
           <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-12">
-            {['Vogue', 'Allure', "Harper's Bazaar", 'Elle', 'Cosmopolitan', 'InStyle'].map(
-              (pub) => (
-                <PressLogo key={pub} name={pub} />
-              )
-            )}
+            {[
+              { name: 'Vogue', src: '/images/press/vogue.svg', w: 120 },
+              { name: 'Allure', src: '/images/press/allure.svg', w: 110 },
+              { name: "Harper's Bazaar", src: '/images/press/harpers-bazaar.svg', w: 180 },
+              { name: 'Elle', src: '/images/press/elle.svg', w: 90 },
+              { name: 'Cosmopolitan', src: '/images/press/cosmopolitan.svg', w: 170 },
+              { name: 'InStyle', src: '/images/press/instyle.svg', w: 110 },
+            ].map((logo) => (
+              <img key={logo.name} src={logo.src} alt={logo.name} width={logo.w} height={40} className="h-8 w-auto opacity-60" />
+            ))}
           </div>
         </div>
       </section>
