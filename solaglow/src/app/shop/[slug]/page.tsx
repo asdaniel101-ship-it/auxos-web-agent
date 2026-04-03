@@ -1,9 +1,17 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { products } from '@/data/products'
-import { ProductGallery } from '@/components/shop/ProductGallery'
-import { ProductInfo } from '@/components/shop/ProductInfo'
-import { ProductTabs } from '@/components/shop/ProductTabs'
+import { ProductHero } from '@/components/product/ProductHero'
+import { MetricsBanner } from '@/components/product/MetricsBanner'
+import { TechnologySection } from '@/components/product/TechnologySection'
+import { BeforeAfterSection } from '@/components/product/BeforeAfterSection'
+import { HowToUse } from '@/components/product/HowToUse'
+import { DoctorPanel } from '@/components/product/DoctorPanel'
+import { ReviewsSection } from '@/components/product/ReviewsSection'
+import { PricingTiers } from '@/components/product/PricingTiers'
+import { FAQSection } from '@/components/product/FAQSection'
+import { GuaranteeBanner } from '@/components/product/GuaranteeBanner'
+import { RelatedProducts } from '@/components/product/RelatedProducts'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -31,6 +39,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  const relatedProducts = products
+    .filter((p) => p.id !== product.id)
+    .slice(0, 4)
+
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
@@ -48,25 +60,38 @@ export default async function ProductDetailPage({ params }: PageProps) {
         </nav>
       </div>
 
-      {/* Split layout: Gallery + Info */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col lg:flex-row gap-12 xl:gap-16">
-          {/* Left: Gallery (55%) */}
-          <div className="lg:w-[55%]">
-            <ProductGallery images={product.images} name={product.name} category={product.category} />
-          </div>
+      {/* Section 1: Product Hero */}
+      <ProductHero product={product} />
 
-          {/* Right: Info (45%) */}
-          <div className="lg:w-[45%] lg:sticky lg:top-24 self-start">
-            <ProductInfo product={product} />
-          </div>
-        </div>
-      </section>
+      {/* Section 2: Key Metrics Banner */}
+      <MetricsBanner />
 
-      {/* Below the fold: Tabs */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <ProductTabs product={product} />
-      </section>
+      {/* Section 3: Technology Breakdown */}
+      <TechnologySection />
+
+      {/* Section 4: Before & After Results */}
+      <BeforeAfterSection />
+
+      {/* Section 5: How to Use */}
+      <HowToUse />
+
+      {/* Section 6: Doctor Endorsement */}
+      <DoctorPanel />
+
+      {/* Section 7: Customer Reviews */}
+      <ReviewsSection />
+
+      {/* Section 8: Pricing Tiers */}
+      <PricingTiers />
+
+      {/* Section 9: FAQ */}
+      <FAQSection />
+
+      {/* Section 10: Guarantee Banner */}
+      <GuaranteeBanner />
+
+      {/* Section 11: Related Products */}
+      <RelatedProducts products={relatedProducts} />
     </div>
   )
 }
