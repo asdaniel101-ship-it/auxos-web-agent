@@ -6,6 +6,7 @@ import { Menu, X, ShoppingBag, Search, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { mainNav } from '@/data/navigation'
 import { AnnouncementBar } from './AnnouncementBar'
+import { useCartStore } from '@/store/cart'
 
 interface HeaderProps {
   transparent?: boolean
@@ -15,8 +16,13 @@ export function Header({ transparent = false }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
-  const [cartCount] = useState(0)
+  const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const itemCount = useCartStore((s) => s.getItemCount())
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -152,7 +158,7 @@ export function Header({ transparent = false }: HeaderProps) {
               {/* Cart */}
               <Link
                 href="/cart"
-                aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+                aria-label={`Cart${mounted && itemCount > 0 ? `, ${itemCount} items` : ''}`}
                 className={cn(
                   'relative p-2.5 rounded-full transition-colors',
                   isTransparent
@@ -161,9 +167,9 @@ export function Header({ transparent = false }: HeaderProps) {
                 )}
               >
                 <ShoppingBag className="w-5 h-5" />
-                {cartCount > 0 && (
+                {mounted && itemCount > 0 && (
                   <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-brand text-white rounded-full">
-                    {cartCount}
+                    {itemCount}
                   </span>
                 )}
               </Link>

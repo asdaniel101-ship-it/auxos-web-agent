@@ -6,6 +6,7 @@ import { ProductGallery } from '@/components/shop/ProductGallery'
 import { Badge, getBadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/utils'
+import { AddToCartButton } from '@/components/cart/AddToCartButton'
 
 interface ProductHeroProps {
   product: Product
@@ -174,9 +175,19 @@ export function ProductHero({ product }: ProductHeroProps) {
 
             {/* CTA buttons */}
             <div className="flex flex-col gap-3">
-              <Button variant="primary" size="xl" className="w-full text-base">
+              <AddToCartButton
+                productId={product.id}
+                name={product.name}
+                price={product.price}
+                image={product.images[0]}
+                slug={product.slug}
+                quantity={quantity}
+                variant="primary"
+                size="xl"
+                className="w-full text-base"
+              >
                 Add to Cart — {formatPrice(product.price * quantity)}
-              </Button>
+              </AddToCartButton>
               <Button variant="secondary" size="lg" className="w-full">
                 Buy Now
               </Button>

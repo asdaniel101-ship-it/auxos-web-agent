@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { Product } from '@/data/products'
 import { Badge, getBadgeVariant } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/utils'
+import { AddToCartButton } from '@/components/cart/AddToCartButton'
 
 interface ProductCardProps {
   product: Product
@@ -103,15 +103,29 @@ export function ProductCard({ product }: ProductCardProps) {
             hovered ? 'md:max-h-16 md:opacity-100 md:mt-2' : 'md:max-h-0 md:opacity-0'
           } mt-2`}
         >
-          <Button variant="primary" size="sm" className="w-full">
-            Add to Cart
-          </Button>
+          <AddToCartButton
+            productId={product.id}
+            name={product.name}
+            price={product.price}
+            image={product.images[0]}
+            slug={product.slug}
+            variant="primary"
+            size="sm"
+            className="w-full"
+          />
         </div>
         {/* Always visible on mobile */}
         <div className="md:hidden mt-1">
-          <Button variant="primary" size="sm" className="w-full">
-            Add to Cart
-          </Button>
+          <AddToCartButton
+            productId={product.id}
+            name={product.name}
+            price={product.price}
+            image={product.images[0]}
+            slug={product.slug}
+            variant="primary"
+            size="sm"
+            className="w-full"
+          />
         </div>
       </div>
     </div>

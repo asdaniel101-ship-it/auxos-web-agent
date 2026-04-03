@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { Product } from '@/data/products'
 import { Badge, getBadgeVariant } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/utils'
+import { AddToCartButton } from '@/components/cart/AddToCartButton'
 
 interface RelatedProductsProps {
   products: Product[]
@@ -91,9 +91,16 @@ export function RelatedProducts({ products }: RelatedProductsProps) {
                     <span className="text-xs text-muted-foreground line-through">{formatPrice(product.comparePrice)}</span>
                   )}
                 </div>
-                <Button variant="primary" size="sm" className="w-full mt-2">
-                  Add to Cart
-                </Button>
+                <AddToCartButton
+                  productId={product.id}
+                  name={product.name}
+                  price={product.price}
+                  image={product.images[0]}
+                  slug={product.slug}
+                  variant="primary"
+                  size="sm"
+                  className="w-full mt-2"
+                />
               </div>
             </div>
           ))}

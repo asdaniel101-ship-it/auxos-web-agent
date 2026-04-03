@@ -5,6 +5,9 @@ import { Product } from '@/data/products'
 import { Badge, getBadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/utils'
+import { AddToCartButton } from '@/components/cart/AddToCartButton'
+import { useCartStore } from '@/store/cart'
+import { useRouter } from 'next/navigation'
 
 interface ProductInfoProps {
   product: Product
@@ -83,6 +86,14 @@ const trustBadges = [
 ]
 
 export function ProductInfo({ product }: ProductInfoProps) {
+  const addItem = useCartStore((s) => s.addItem)
+  const router = useRouter()
+
+  const handleBuyNow = () => {
+    addItem({ productId: product.id, name: product.name, price: product.price, image: product.images[0], slug: product.slug })
+    router.push('/checkout')
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Badge */}
@@ -120,10 +131,17 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       {/* CTA buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <Button variant="primary" size="lg" className="flex-1">
-          Add to Cart
-        </Button>
-        <Button variant="secondary" size="lg" className="flex-1">
+        <AddToCartButton
+          productId={product.id}
+          name={product.name}
+          price={product.price}
+          image={product.images[0]}
+          slug={product.slug}
+          variant="primary"
+          size="lg"
+          className="flex-1"
+        />
+        <Button variant="secondary" size="lg" className="flex-1" onClick={handleBuyNow}>
           Buy Now
         </Button>
       </div>

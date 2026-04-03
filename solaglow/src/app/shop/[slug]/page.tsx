@@ -82,7 +82,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <ReviewsSection />
 
       {/* Section 8: Pricing Tiers */}
-      <PricingTiers />
+      <PricingTiers product={product} />
 
       {/* Section 9: FAQ */}
       <FAQSection />

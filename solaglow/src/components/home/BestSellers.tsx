@@ -1,8 +1,10 @@
+'use client'
+
 import Link from 'next/link'
 import { products } from '@/data/products'
 import { formatPrice } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { AddToCartButton } from '@/components/cart/AddToCartButton'
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
   return (
@@ -100,9 +102,16 @@ export default function BestSellers() {
                   )}
                 </div>
 
-                <Button variant="primary" size="default" className="w-full mt-1">
-                  Add to Cart
-                </Button>
+                <AddToCartButton
+                  productId={product.id}
+                  name={product.name}
+                  price={product.price}
+                  image={product.images[0]}
+                  slug={product.slug}
+                  variant="primary"
+                  size="default"
+                  className="w-full mt-1"
+                />
               </div>
             </div>
           ))}
