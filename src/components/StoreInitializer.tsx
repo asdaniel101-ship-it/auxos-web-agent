@@ -1,22 +1,23 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStore } from '@/store'
 
 export function StoreInitializer({ children }: { children: React.ReactNode }) {
-  const initialize = useStore((s) => s.initialize)
-  const initialized = useStore((s) => s.initialized)
+  const initRef = useRef(false)
 
-  useEffect(() => {
-    initialize()
-  }, [initialize])
-
-  if (!initialized) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-slate-500">Loading...</div>
-      </div>
-    )
+  if (!initRef.current) {
+    // Initialize synchronously on first render (before useEffect)
+    // This avoids the flash of "Loading..." and ensures data is ready immediately
+    try {
+      const state = useStore.getState()
+      if (!state.initialized) {
+        state.initialize()
+      }
+    } catch (e) {
+      console.error('Failed to initialize store:', e)
+    }
+    initRef.current = true
   }
 
   return <>{children}</>
