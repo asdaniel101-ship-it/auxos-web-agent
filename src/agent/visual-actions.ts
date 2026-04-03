@@ -6,61 +6,64 @@ function capitalize(s: string): string {
 
 /**
  * Queue visual cursor actions for a tool execution.
- * These run asynchronously — the data mutation already happened,
- * the cursor just shows the user what the agent "did."
+ * Returns a Promise that resolves when the animation completes.
+ * The caller should AWAIT this before mutating data.
  */
-export function queueVisualAction(toolName: string, input: Record<string, unknown>) {
+export function queueVisualAction(toolName: string, input: Record<string, unknown>): Promise<void> {
   switch (toolName) {
     case 'send_email':
-      queueAgentSteps([
+      return queueAgentSteps([
         { type: 'click', selector: 'button[aria-label="Compose new email"]' },
-        { type: 'wait', delay: 500 },
+        { type: 'wait', delay: 600 },
         { type: 'type', selector: 'input[aria-label="Recipient email address"]', text: (input.to as string) || '' },
         { type: 'type', selector: 'input[aria-label="Email subject"]', text: (input.subject as string) || '' },
-        { type: 'type', selector: 'textarea[aria-label="Email body"]', text: ((input.body as string) || '').slice(0, 100) },
-        { type: 'wait', delay: 300 },
+        { type: 'type', selector: 'textarea[aria-label="Email body"]', text: ((input.body as string) || '').slice(0, 120) },
+        { type: 'wait', delay: 400 },
         { type: 'click', selector: 'button[aria-label="Send email"]' },
+        { type: 'wait', delay: 500 },
       ])
-      break
 
     case 'create_contact':
-      queueAgentSteps([
+      return queueAgentSteps([
         { type: 'click', selector: 'button[aria-label="Add new contact"]' },
-        { type: 'wait', delay: 500 },
-        { type: 'type', selector: '#cf-first', text: (input.firstName as string) || '' },
-        { type: 'type', selector: '#cf-last', text: (input.lastName as string) || '' },
+        { type: 'wait', delay: 600 },
+        { type: 'type', selector: '#cf-firstName', text: (input.firstName as string) || '' },
+        { type: 'type', selector: '#cf-lastName', text: (input.lastName as string) || '' },
         { type: 'type', selector: '#cf-email', text: (input.email as string) || '' },
+        { type: 'wait', delay: 400 },
       ])
-      break
 
     case 'create_company':
-      queueAgentSteps([
+      return queueAgentSteps([
         { type: 'click', selector: 'button[aria-label="Add new company"]' },
-        { type: 'wait', delay: 500 },
-        { type: 'type', selector: '#cof-name', text: (input.name as string) || '' },
+        { type: 'wait', delay: 600 },
+        { type: 'type', selector: '#cf-name', text: (input.name as string) || '' },
+        { type: 'wait', delay: 400 },
       ])
-      break
 
     case 'create_deal':
-      queueAgentSteps([
+      return queueAgentSteps([
         { type: 'click', selector: 'button[aria-label="Add new deal"]' },
-        { type: 'wait', delay: 500 },
+        { type: 'wait', delay: 600 },
         { type: 'type', selector: '#df-name', text: (input.name as string) || '' },
+        { type: 'wait', delay: 400 },
       ])
-      break
 
     case 'create_task':
-      queueAgentSteps([
+      return queueAgentSteps([
         { type: 'click', selector: 'button[aria-label="Add new task"]' },
-        { type: 'wait', delay: 500 },
+        { type: 'wait', delay: 600 },
         { type: 'type', selector: '#tf-name', text: (input.name as string) || '' },
+        { type: 'wait', delay: 400 },
       ])
-      break
 
     case 'navigate_to':
-      queueAgentSteps([
+      return queueAgentSteps([
         { type: 'click', selector: `a[aria-label="Navigate to ${capitalize(input.page as string)}"]` },
+        { type: 'wait', delay: 300 },
       ])
-      break
+
+    default:
+      return Promise.resolve()
   }
 }

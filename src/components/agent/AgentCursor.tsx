@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useStore } from '@/store'
 
 interface CursorPosition {
   x: number
@@ -11,22 +10,27 @@ interface CursorPosition {
 }
 
 interface AgentStep {
-  type: 'move' | 'click' | 'type' | 'wait'
+  type: 'move' | 'click' | 'type' | 'wait' | 'scroll-to'
   selector?: string
   text?: string
   delay?: number
 }
 
-// Global queue for agent visual actions
-let stepQueue: AgentStep[] = []
-let isProcessing = false
-let onStepComplete: (() => void) | null = null
+type QueueItem = {
+  steps: AgentStep[]
+  resolve: () => void
+}
 
+const queue: QueueItem[] = []
+let isProcessing = false
+
+/**
+ * Queue visual steps and return a Promise that resolves when they complete.
+ * The caller should AWAIT this before mutating state.
+ */
 export function queueAgentSteps(steps: AgentStep[]): Promise<void> {
   return new Promise((resolve) => {
-    stepQueue.push(...steps)
-    onStepComplete = resolve
-    // Trigger processing via a custom event
+    queue.push({ steps, resolve })
     window.dispatchEvent(new CustomEvent('agent-steps-queued'))
   })
 }
@@ -36,98 +40,103 @@ export function AgentCursor() {
   const processingRef = useRef(false)
 
   const processQueue = useCallback(async () => {
-    if (processingRef.current || stepQueue.length === 0) return
+    if (processingRef.current || queue.length === 0) return
     processingRef.current = true
     setPos((p) => ({ ...p, visible: true }))
 
-    while (stepQueue.length > 0) {
-      const step = stepQueue.shift()!
+    while (queue.length > 0) {
+      const item = queue.shift()!
 
-      switch (step.type) {
-        case 'move': {
-          if (!step.selector) break
-          const el = document.querySelector(step.selector)
-          if (!el) break
-          const rect = el.getBoundingClientRect()
-          const x = rect.left + rect.width / 2
-          const y = rect.top + rect.height / 2
-          setPos((p) => ({ ...p, x, y, clicking: false }))
-          await sleep(400) // let cursor animation finish
-          break
-        }
-
-        case 'click': {
-          if (!step.selector) break
-          const el = document.querySelector(step.selector)
-          if (!el) break
-          const rect = el.getBoundingClientRect()
-          const x = rect.left + rect.width / 2
-          const y = rect.top + rect.height / 2
-          // Move to element
-          setPos((p) => ({ ...p, x, y, clicking: false }))
-          await sleep(300)
-          // Click animation
-          setPos((p) => ({ ...p, clicking: true }))
-          await sleep(150)
-          setPos((p) => ({ ...p, clicking: false }))
-          // Actually click the element
-          ;(el as HTMLElement).click()
-          await sleep(300)
-          break
-        }
-
-        case 'type': {
-          if (!step.selector || !step.text) break
-          const el = document.querySelector(step.selector) as HTMLInputElement | HTMLTextAreaElement
-          if (!el) break
-          const rect = el.getBoundingClientRect()
-          // Move to field
-          setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
-          await sleep(300)
-          // Click to focus
-          setPos((p) => ({ ...p, clicking: true }))
-          await sleep(100)
-          setPos((p) => ({ ...p, clicking: false }))
-          el.focus()
-          await sleep(150)
-          // Type character by character
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype, 'value'
-          )?.set || Object.getOwnPropertyDescriptor(
-            window.HTMLTextAreaElement.prototype, 'value'
-          )?.set
-          let currentValue = ''
-          for (const char of step.text) {
-            currentValue += char
-            if (nativeInputValueSetter) {
-              nativeInputValueSetter.call(el, currentValue)
-            } else {
-              el.value = currentValue
-            }
-            el.dispatchEvent(new Event('input', { bubbles: true }))
-            el.dispatchEvent(new Event('change', { bubbles: true }))
-            await sleep(30 + Math.random() * 40) // human-like typing speed
+      for (const step of item.steps) {
+        switch (step.type) {
+          case 'scroll-to': {
+            if (!step.selector) break
+            const el = document.querySelector(step.selector)
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            await sleep(400)
+            break
           }
-          await sleep(200)
-          break
-        }
 
-        case 'wait': {
-          await sleep(step.delay || 500)
-          break
+          case 'move': {
+            if (!step.selector) break
+            const el = await waitForElement(step.selector, 2000)
+            if (!el) break
+            const rect = el.getBoundingClientRect()
+            setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
+            await sleep(600)
+            break
+          }
+
+          case 'click': {
+            if (!step.selector) break
+            const el = await waitForElement(step.selector, 2000)
+            if (!el) break
+            const rect = el.getBoundingClientRect()
+            // Move to element
+            setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
+            await sleep(500)
+            // Click animation
+            setPos((p) => ({ ...p, clicking: true }))
+            await sleep(200)
+            setPos((p) => ({ ...p, clicking: false }))
+            // Actually click
+            ;(el as HTMLElement).click()
+            await sleep(500)
+            break
+          }
+
+          case 'type': {
+            if (!step.selector || !step.text) break
+            const el = await waitForElement(step.selector, 3000) as HTMLInputElement | HTMLTextAreaElement | null
+            if (!el) break
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            await sleep(200)
+            const rect = el.getBoundingClientRect()
+            // Move to field
+            setPos((p) => ({ ...p, x: rect.left + 40, y: rect.top + rect.height / 2, clicking: false }))
+            await sleep(400)
+            // Click to focus
+            setPos((p) => ({ ...p, clicking: true }))
+            await sleep(150)
+            setPos((p) => ({ ...p, clicking: false }))
+            el.focus()
+            el.click()
+            await sleep(200)
+            // Type character by character
+            const nativeSetter =
+              Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set ||
+              Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+            let currentValue = el.value || ''
+            for (const char of step.text) {
+              currentValue += char
+              if (nativeSetter) {
+                nativeSetter.call(el, currentValue)
+              } else {
+                el.value = currentValue
+              }
+              el.dispatchEvent(new Event('input', { bubbles: true }))
+              el.dispatchEvent(new Event('change', { bubbles: true }))
+              await sleep(40 + Math.random() * 50)
+            }
+            await sleep(300)
+            break
+          }
+
+          case 'wait': {
+            await sleep(step.delay || 500)
+            break
+          }
         }
       }
+
+      // Resolve this queue item's promise so the caller can proceed
+      item.resolve()
     }
 
-    // Hide cursor after all steps done
-    await sleep(300)
+    // Hide cursor
+    await sleep(500)
     setPos((p) => ({ ...p, visible: false }))
     processingRef.current = false
-
-    if (onStepComplete) {
-      onStepComplete()
-      onStepComplete = null
-    }
   }, [])
 
   useEffect(() => {
@@ -142,45 +151,43 @@ export function AgentCursor() {
         position: 'fixed',
         left: pos.x - 4,
         top: pos.y - 2,
-        width: '20px',
-        height: '20px',
+        width: '24px',
+        height: '24px',
         pointerEvents: 'none',
         zIndex: 99999,
-        transition: 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), top 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s',
-        transform: pos.clicking ? 'scale(0.8)' : 'scale(1)',
+        transition: 'left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s, opacity 0.3s',
+        transform: pos.clicking ? 'scale(0.75)' : 'scale(1)',
         opacity: pos.visible ? 1 : 0,
+        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
       }}
     >
-      {/* Cursor SVG */}
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path
           d="M5 3L19 12L12 13L9 20L5 3Z"
           fill="#6366f1"
           stroke="#ffffff"
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinejoin="round"
         />
       </svg>
-      {/* Click ripple */}
       {pos.clicking && (
         <div
           style={{
             position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: '24px',
-            height: '24px',
+            left: '4px',
+            top: '2px',
+            width: '16px',
+            height: '16px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(99, 102, 241, 0.3)',
-            transform: 'translate(-50%, -50%)',
-            animation: 'agent-ripple 0.4s ease-out',
+            border: '2px solid rgba(99, 102, 241, 0.5)',
+            animation: 'agent-ripple 0.5s ease-out forwards',
           }}
         />
       )}
       <style>{`
         @keyframes agent-ripple {
-          0% { width: 8px; height: 8px; opacity: 0.6; }
-          100% { width: 40px; height: 40px; opacity: 0; }
+          0% { width: 16px; height: 16px; opacity: 0.7; left: 4px; top: 2px; }
+          100% { width: 48px; height: 48px; opacity: 0; left: -12px; top: -14px; }
         }
       `}</style>
     </div>
@@ -189,4 +196,23 @@ export function AgentCursor() {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function waitForElement(selector: string, timeout: number): Promise<Element | null> {
+  return new Promise((resolve) => {
+    const el = document.querySelector(selector)
+    if (el) return resolve(el)
+
+    const start = Date.now()
+    const interval = setInterval(() => {
+      const el = document.querySelector(selector)
+      if (el) {
+        clearInterval(interval)
+        resolve(el)
+      } else if (Date.now() - start > timeout) {
+        clearInterval(interval)
+        resolve(null)
+      }
+    }, 100)
+  })
 }
