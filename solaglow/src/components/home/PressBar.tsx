@@ -4,7 +4,6 @@ const logos = [
   { name: "Harper's Bazaar", src: '/images/press/harpers-bazaar.svg', width: 180 },
   { name: 'Elle', src: '/images/press/elle.svg', width: 90 },
   { name: 'Cosmopolitan', src: '/images/press/cosmopolitan.svg', width: 170 },
-  { name: 'InStyle', src: '/images/press/instyle.svg', width: 110 },
 ]
 
 export default function PressBar() {
