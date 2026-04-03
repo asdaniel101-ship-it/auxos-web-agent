@@ -1,8 +1,13 @@
 'use client'
-export default function DealDetailPage() {
+
+import { DealDetail } from '@/components/deals/DealDetail'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+
+export default function DealDetailPage({ params }: { params: { id: string } }) {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">Deal Detail</h1>
+      <Breadcrumbs />
+      <DealDetail id={params.id} />
     </div>
   )
 }
