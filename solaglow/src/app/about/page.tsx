@@ -56,19 +56,19 @@ const team = [
   {
     name: 'Dr. Alicia Chen',
     title: 'Founder & Chief Scientist',
-    initials: 'AC',
+    image: '/images/lifestyle/team-1.jpg',
     bio: 'Board-certified dermatologist with 15+ years of clinical research in photobiomodulation and skin biology.',
   },
   {
     name: 'Marcus Rivera',
     title: 'Head of Product Design',
-    initials: 'MR',
+    image: '/images/lifestyle/team-2.jpg',
     bio: 'Former Apple designer with a passion for merging clinical precision with beautiful, intuitive consumer hardware.',
   },
   {
     name: 'Sarah Kim',
     title: 'VP of Community & Education',
-    initials: 'SK',
+    image: '/images/lifestyle/team-3.jpg',
     bio: 'Licensed esthetician and educator dedicated to making professional skincare knowledge accessible to everyone.',
   },
 ]
@@ -149,15 +149,14 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* Image placeholder */}
+            {/* Story image */}
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden aspect-[4/5] shadow-warm-xl">
-                <div className="bg-gradient-to-br from-amber-100 to-orange-200 w-full h-full flex items-center justify-center">
-                  <div className="text-center px-6">
-                    <div className="text-amber-800 font-heading font-semibold text-xl">SolaGlow Story</div>
-                    <div className="text-amber-700 opacity-60 text-sm mt-1">Founded 2021</div>
-                  </div>
-                </div>
+                <img
+                  src="/images/lifestyle/about-story.jpg"
+                  alt="SolaGlow story"
+                  className="w-full h-full object-cover"
+                />
               </div>
               {/* Floating accent card */}
               <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-warm-lg p-5 border border-border max-w-[220px]">
@@ -235,12 +234,12 @@ export default function AboutPage() {
                 key={member.name}
                 className="bg-white rounded-2xl border border-border p-8 flex flex-col items-center text-center gap-5 hover:shadow-warm-md transition-all duration-300"
               >
-                {/* Avatar with initials */}
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center ring-4 ring-brand/10">
-                  <span className="font-heading text-2xl font-bold text-brand">
-                    {member.initials}
-                  </span>
-                </div>
+                {/* Avatar */}
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  className="w-24 h-24 rounded-full object-cover ring-4 ring-brand/10"
+                />
 
                 {/* Info */}
                 <div className="flex flex-col gap-1">

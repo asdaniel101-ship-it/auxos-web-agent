@@ -6,7 +6,6 @@ import { Product } from '@/data/products'
 import { Badge, getBadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/utils'
-import { ProductImage } from '@/components/ui/ProductImage'
 
 interface ProductCardProps {
   product: Product
@@ -62,11 +61,10 @@ export function ProductCard({ product }: ProductCardProps) {
       onMouseLeave={() => setHovered(false)}
     >
       <Link href={`/shop/${product.slug}`} className="block relative overflow-hidden">
-        <ProductImage
-          name={product.name}
-          category={product.category}
-          size="sm"
-          className="rounded-none transition-transform duration-500 group-hover:scale-105"
+        <img
+          src={product.images[0]}
+          alt={product.name}
+          className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"
         />
         {product.badge && (
           <div className="absolute top-3 left-3 z-10">

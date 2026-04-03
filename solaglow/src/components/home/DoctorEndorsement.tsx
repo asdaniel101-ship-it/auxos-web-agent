@@ -2,21 +2,21 @@ const doctors = [
   {
     name: 'Dr. Sarah Mitchell, MD',
     credentials: 'Board-Certified Dermatologist',
-    initials: 'SM',
+    image: '/images/doctors/doctor-1.jpg',
     quote:
       "SolaGlow's LED technology delivers clinical-grade wavelengths that I'd typically only recommend through in-office treatments. The results my patients have seen at home are remarkable.",
   },
   {
     name: 'Dr. James Park, DO',
     credentials: 'Cosmetic Dermatology',
-    initials: 'JP',
+    image: '/images/doctors/doctor-2.jpg',
     quote:
       "What sets SolaGlow apart is their commitment to the right wavelengths at the right intensity. This isn't a gimmick \u2014 it's real photobiomodulation therapy.",
   },
   {
     name: 'Dr. Elena Rodriguez, MD',
     credentials: 'Anti-Aging Specialist',
-    initials: 'ER',
+    image: '/images/doctors/doctor-3.jpg',
     quote:
       'I recommend SolaGlow to every patient looking for a non-invasive approach to skin rejuvenation. The combination of their device with their skincare line is synergistic.',
   },
@@ -47,11 +47,11 @@ export default function DoctorEndorsement() {
               className="bg-white rounded-2xl border border-border/50 p-8 flex flex-col items-center text-center gap-5 hover:shadow-warm-md transition-all duration-300"
             >
               {/* Avatar */}
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center ring-4 ring-brand/10">
-                <span className="font-heading text-2xl font-bold text-brand">
-                  {doctor.initials}
-                </span>
-              </div>
+              <img
+                src={doctor.image}
+                alt={doctor.name}
+                className="w-20 h-20 rounded-full object-cover ring-4 ring-brand/10"
+              />
 
               {/* Name & credentials */}
               <div className="flex flex-col gap-1">

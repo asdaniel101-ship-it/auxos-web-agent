@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { testimonials } from '@/data/products'
-import { BeforeAfterImage } from '@/components/ui/ProductImage'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -12,36 +11,48 @@ const beforeAfters = [
     age: 34,
     concern: 'Fine Lines',
     duration: '6 weeks',
+    beforeImg: '/images/lifestyle/skin-1.jpg',
+    afterImg: '/images/lifestyle/skin-2.jpg',
   },
   {
     name: 'Michelle',
     age: 28,
     concern: 'Acne Scarring',
     duration: '8 weeks',
+    beforeImg: '/images/lifestyle/skin-3.jpg',
+    afterImg: '/images/lifestyle/skin-4.jpg',
   },
   {
     name: 'Lisa',
     age: 42,
     concern: 'Uneven Skin Tone',
     duration: '4 weeks',
+    beforeImg: '/images/lifestyle/skin-5.jpg',
+    afterImg: '/images/lifestyle/skin-6.jpg',
   },
   {
     name: 'Amanda',
     age: 31,
     concern: 'Dark Circles',
     duration: '3 weeks',
+    beforeImg: '/images/lifestyle/skin-2.jpg',
+    afterImg: '/images/lifestyle/skin-1.jpg',
   },
   {
     name: 'Rachel',
     age: 39,
     concern: 'Dullness',
     duration: '4 weeks',
+    beforeImg: '/images/lifestyle/skin-4.jpg',
+    afterImg: '/images/lifestyle/skin-3.jpg',
   },
   {
     name: 'Diana',
     age: 45,
     concern: 'Wrinkles',
     duration: '8 weeks',
+    beforeImg: '/images/lifestyle/skin-6.jpg',
+    afterImg: '/images/lifestyle/skin-5.jpg',
   },
 ]
 
@@ -121,13 +132,13 @@ export default function ResultsPage() {
                 {/* Images */}
                 <div className="grid grid-cols-2">
                   <div className="relative">
-                    <BeforeAfterImage label="Before" variant="before" />
+                    <img src={person.beforeImg} alt="Before" className="w-full h-full object-cover" />
                     <span className="absolute bottom-2 left-2 bg-foreground/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide">
                       BEFORE
                     </span>
                   </div>
                   <div className="relative">
-                    <BeforeAfterImage label="After" variant="after" />
+                    <img src={person.afterImg} alt="After" className="w-full h-full object-cover" />
                     <span className="absolute bottom-2 left-2 bg-brand/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide">
                       AFTER
                     </span>

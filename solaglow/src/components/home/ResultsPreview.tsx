@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button'
-import { BeforeAfterImage } from '@/components/ui/ProductImage'
 
 const stats = [
   { value: '93%', label: 'saw improved skin texture' },
@@ -10,12 +9,18 @@ const stats = [
 const resultCards = [
   {
     label: '6 Weeks of Use',
+    beforeImg: '/images/lifestyle/skin-1.jpg',
+    afterImg: '/images/lifestyle/skin-2.jpg',
   },
   {
     label: '4 Weeks of Use',
+    beforeImg: '/images/lifestyle/skin-3.jpg',
+    afterImg: '/images/lifestyle/skin-4.jpg',
   },
   {
     label: '8 Weeks of Use',
+    beforeImg: '/images/lifestyle/skin-5.jpg',
+    afterImg: '/images/lifestyle/skin-6.jpg',
   },
 ]
 
@@ -46,8 +51,8 @@ export default function ResultsPreview() {
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <div className="grid grid-cols-2 h-full">
-                  <BeforeAfterImage label="Before" variant="before" />
-                  <BeforeAfterImage label="After" variant="after" />
+                  <img src={card.beforeImg} alt="Before" className="w-full h-full object-cover" />
+                  <img src={card.afterImg} alt="After" className="w-full h-full object-cover" />
                 </div>
                 {/* Overlay label */}
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/40 to-transparent p-4">

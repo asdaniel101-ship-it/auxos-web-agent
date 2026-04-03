@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ProductImage } from '@/components/ui/ProductImage'
 
 interface ProductGalleryProps {
   images: string[]
@@ -9,25 +8,24 @@ interface ProductGalleryProps {
   category?: string
 }
 
-export function ProductGallery({ images, name, category = 'default' }: ProductGalleryProps) {
+export function ProductGallery({ images, name }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0)
 
   return (
     <div className="flex flex-col gap-4">
       {/* Main image */}
       <div className="relative w-full rounded-3xl overflow-hidden bg-muted shadow-warm-md">
-        <ProductImage
-          name={name}
-          category={category}
-          size="lg"
-          className="rounded-3xl"
+        <img
+          src={images[activeIndex]}
+          alt={name}
+          className="w-full h-full object-cover rounded-lg"
         />
       </div>
 
       {/* Thumbnail strip */}
       {images.length > 1 && (
         <div className="flex gap-3">
-          {images.map((_, i) => (
+          {images.map((img, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
@@ -38,11 +36,10 @@ export function ProductGallery({ images, name, category = 'default' }: ProductGa
               }`}
               aria-label={`View image ${i + 1}`}
             >
-              <ProductImage
-                name={name}
-                category={category}
-                size="sm"
-                className="rounded-xl h-20"
+              <img
+                src={img}
+                alt={`${name} ${i + 1}`}
+                className="w-full h-full object-cover rounded-md"
               />
             </button>
           ))}

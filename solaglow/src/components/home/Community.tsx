@@ -1,10 +1,10 @@
 const communityImages = [
-  { handle: '@solaglow', bg: 'from-amber-100 to-orange-200', span: 'col-span-1 row-span-1' },
-  { handle: '@glowwithme', bg: 'from-rose-100 to-pink-200', span: 'col-span-1 row-span-2' },
-  { handle: '@skincarejoy', bg: 'from-amber-50 to-yellow-100', span: 'col-span-1 row-span-1' },
-  { handle: '@radiantlife', bg: 'from-orange-100 to-amber-200', span: 'col-span-2 row-span-1' },
-  { handle: '@glowup', bg: 'from-rose-50 to-rose-200', span: 'col-span-1 row-span-1' },
-  { handle: '@solabeauty', bg: 'from-amber-100 to-stone-200', span: 'col-span-1 row-span-1' },
+  { handle: '@solaglow', span: 'col-span-1 row-span-1' },
+  { handle: '@glowwithme', span: 'col-span-1 row-span-2' },
+  { handle: '@skincarejoy', span: 'col-span-1 row-span-1' },
+  { handle: '@radiantlife', span: 'col-span-2 row-span-1' },
+  { handle: '@glowup', span: 'col-span-1 row-span-1' },
+  { handle: '@solabeauty', span: 'col-span-1 row-span-1' },
 ]
 
 export default function Community() {
@@ -32,9 +32,11 @@ export default function Community() {
               key={index}
               className={`group relative overflow-hidden rounded-2xl ${img.span}`}
             >
-              <div className={`bg-gradient-to-br ${img.bg} w-full h-full flex items-center justify-center`}>
-                <span className="text-stone-500 font-medium text-sm">{img.handle}</span>
-              </div>
+              <img
+                src={`/images/community/community-${index + 1}.jpg`}
+                alt={img.handle}
+                className="w-full h-full object-cover"
+              />
               {/* Hover overlay */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">

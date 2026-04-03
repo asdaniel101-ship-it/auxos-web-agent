@@ -3,7 +3,6 @@ import { products } from '@/data/products'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ProductImage } from '@/components/ui/ProductImage'
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
   return (
@@ -63,11 +62,10 @@ export default function BestSellers() {
             >
               {/* Product image */}
               <div className="relative overflow-hidden bg-accent/20">
-                <ProductImage
-                  name={product.name}
-                  category={product.category}
-                  size="sm"
-                  className="rounded-none group-hover:scale-105 transition-transform duration-500"
+                <img
+                  src={product.images[0]}
+                  alt={product.name}
+                  className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 {product.badge && (
                   <div className="absolute top-3 left-3 z-10">

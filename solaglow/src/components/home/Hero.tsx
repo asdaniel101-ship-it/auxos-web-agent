@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button'
-import { ProductImage } from '@/components/ui/ProductImage'
 
 export default function Hero() {
   return (
@@ -72,11 +71,10 @@ export default function Hero() {
             <div className="relative">
               {/* Soft glow ring behind image */}
               <div className="absolute inset-6 rounded-full bg-brand/10 blur-2xl" />
-              <ProductImage
-                name="RadiantWave Pro"
-                category="devices"
-                size="lg"
-                className="relative z-10 rounded-3xl shadow-warm-xl w-full max-w-[480px] lg:max-w-[560px]"
+              <img
+                src="/images/lifestyle/hero-1.jpg"
+                alt="SolaGlow RadiantWave Pro"
+                className="relative z-10 w-full h-full object-cover rounded-2xl max-w-[480px] lg:max-w-[560px]"
               />
               {/* Floating stat card */}
               <div className="absolute bottom-8 -left-6 z-20 bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-warm-md border border-white/60">
