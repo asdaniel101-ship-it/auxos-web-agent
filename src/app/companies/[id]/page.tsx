@@ -1,8 +1,12 @@
 'use client'
-export default function CompanyDetailPage() {
+import { CompanyDetail } from '@/components/companies/CompanyDetail'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+
+export default function CompanyDetailPage({ params }: { params: { id: string } }) {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">Company Detail</h1>
+      <Breadcrumbs />
+      <CompanyDetail id={params.id} />
     </div>
   )
 }
