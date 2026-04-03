@@ -250,8 +250,11 @@ export function AgentPanel({
               placeholder={`Ask ${name} anything...`}
               disabled={isLoading}
               rows={1}
+              suppressHydrationWarning
               style={{
-                flex: 1,
+                flexGrow: 1,
+                flexShrink: 1,
+                flexBasis: '0%',
                 backgroundColor: 'transparent',
                 fontSize: '14px',
                 color: theme.colors.text,
