@@ -1,8 +1,12 @@
 'use client'
-export default function ContactDetailPage() {
+import { ContactDetail } from '@/components/contacts/ContactDetail'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+
+export default function ContactDetailPage({ params }: { params: { id: string } }) {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">Contact Detail</h1>
+      <Breadcrumbs />
+      <ContactDetail id={params.id} />
     </div>
   )
 }
