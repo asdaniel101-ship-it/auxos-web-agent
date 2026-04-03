@@ -71,10 +71,20 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "pulse-once": {
+          "0%, 100%": { transform: "scale(1)", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" },
+          "50%": { transform: "scale(1.08)", boxShadow: "0 20px 25px -5px rgb(99 102 241 / 0.4)" },
+        },
+        "blink": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-once": "pulse-once 1.2s ease-in-out 0.4s 2",
+        "blink": "blink 0.8s ease-in-out infinite",
       },
     },
   },

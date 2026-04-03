@@ -4,6 +4,7 @@ import './globals.css'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { StoreInitializer } from '@/components/StoreInitializer'
 import { Toaster } from '@/components/ui/toaster'
+import { AgentContainer } from '@/components/agent/AgentContainer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <Toaster />
+          <AgentContainer />
         </StoreInitializer>
       </body>
     </html>
