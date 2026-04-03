@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #FAF7F2;
+    --foreground: #1A1A1A;
+    --card: #FFFFFF;
+    --card-foreground: #1A1A1A;
+    --border: #E8E2DA;
+    --input: #E8E2DA;
+    --ring: #C4956A;
+    --brand: #C4956A;
+    --brand-light: #D4AA87;
+    --brand-lighter: #E8D5C8;
+    --brand-dark: #A07850;
+    --muted: #F5F0EB;
+    --muted-foreground: #6B6259;
+    --accent: #E8D5C8;
+    --accent-foreground: #5E4F44;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #FAF7F2;
+    color: #1A1A1A;
+    font-family: var(--font-inter), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #F5F0EB;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #C4956A;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #A07850;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #C4956A #F5F0EB;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-playfair), Georgia, serif;
+  }
+}
+
+@layer components {
+  /* Brand heading utility */
+  .font-heading {
+    font-family: var(--font-playfair), Georgia, serif;
+  }
+
+  /* Warm section background */
+  .bg-warm {
+    background-color: #FAF7F2;
+  }
+
+  .bg-warm-muted {
+    background-color: #F5F0EB;
+  }
+
+  /* Brand gradient */
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, #C4956A 0%, #D4AA87 100%);
+  }
+
+  /* Subtle card shadow */
+  .card-shadow {
+    box-shadow: 0 2px 12px rgba(196, 149, 106, 0.10);
+  }
+
+  /* Text balance */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Premium divider */
+  .divider-brand {
+    border-color: #E8E2DA;
+  }
+
+  /* Focus ring */
+  .focus-brand:focus-visible {
+    outline: 2px solid #C4956A;
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Animation delays */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  /* Fill mode forward */
+  .animate-fill-forward {
+    animation-fill-mode: forwards;
+  }
+}
