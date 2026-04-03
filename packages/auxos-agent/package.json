@@ -1,0 +1,28 @@
+{
+  "name": "@auxos/agent",
+  "version": "0.1.0",
+  "description": "Drop-in AI agent for any web app. Define your tools, embed the component, ship.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts"
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
+  },
+  "dependencies": {
+    "lucide-react": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18",
+    "typescript": "^5"
+  },
+  "files": [
+    "src"
+  ],
+  "license": "MIT"
+}
