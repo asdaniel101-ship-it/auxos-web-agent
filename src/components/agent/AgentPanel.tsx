@@ -4,8 +4,16 @@ import { useEffect, useRef, useState, KeyboardEvent } from 'react'
 import { Sparkles, X, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AgentMessage } from './AgentMessage'
+import { useStore } from '@/store'
+import { useRouter, usePathname } from 'next/navigation'
+import { executeTool } from '@/agent/executor'
 
-interface Message {
+interface ClaudeMessage {
+  role: 'user' | 'assistant'
+  content: any
+}
+
+interface DisplayMessage {
   role: 'user' | 'assistant'
   content: string
 }
@@ -24,16 +32,27 @@ interface AgentPanelProps {
 }
 
 export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [claudeMessages, setClaudeMessages] = useState<ClaudeMessage[]>([])
+  const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Keep a ref to latest store state to avoid re-renders
+  const storeRef = useRef(useStore.getState())
+  useEffect(() => {
+    return useStore.subscribe((state) => {
+      storeRef.current = state
+    })
+  }, [])
 
   // Auto-scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+  }, [displayMessages, isLoading])
 
   // Auto-resize textarea
   useEffect(() => {
@@ -57,20 +76,122 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
     if (!content || isLoading) return
 
     setInput('')
-    setMessages((prev) => [...prev, { role: 'user', content }])
     setIsLoading(true)
 
-    // Placeholder — real API call will be added in a later task
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
+    // Add user message to display
+    const newDisplayMessages: DisplayMessage[] = [
+      ...displayMessages,
+      { role: 'user', content },
+    ]
+    setDisplayMessages(newDisplayMessages)
+
+    // Add to Claude messages
+    const newClaudeMessages: ClaudeMessage[] = [
+      ...claudeMessages,
+      { role: 'user', content },
+    ]
+
+    try {
+      let currentMessages = newClaudeMessages
+      let finalText = ''
+
+      // Tool execution loop
+      while (true) {
+        const currentStore = useStore.getState()
+
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: currentMessages,
+            context: {
+              teamMembers: currentStore.teamMembers.map((m) => m.name),
+              currentPage: pathname,
+            },
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to get response')
+        }
+
+        const data = await response.json()
+
+        if (data.error) {
+          throw new Error(data.error)
+        }
+
+        // Process response content blocks
+        const assistantContent = data.content
+        const toolUseBlocks = assistantContent.filter(
+          (b: any) => b.type === 'tool_use'
+        )
+        const textBlocks = assistantContent.filter(
+          (b: any) => b.type === 'text'
+        )
+
+        // Collect any text
+        if (textBlocks.length > 0) {
+          finalText += textBlocks.map((b: any) => b.text).join('\n')
+        }
+
+        if (toolUseBlocks.length === 0 || data.stop_reason === 'end_turn') {
+          // No more tool calls, we're done
+          currentMessages = [
+            ...currentMessages,
+            { role: 'assistant', content: assistantContent },
+          ]
+          break
+        }
+
+        // Execute tool calls
+        const toolResults: any[] = []
+        for (const toolUse of toolUseBlocks) {
+          const latestStore = useStore.getState()
+          const result = executeTool(toolUse.name, toolUse.input, latestStore)
+
+          // Handle navigation
+          if (
+            result.success &&
+            result.data &&
+            typeof result.data === 'object' &&
+            'navigate' in (result.data as any)
+          ) {
+            router.push((result.data as any).navigate)
+          }
+
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: JSON.stringify(result),
+          })
+        }
+
+        // Add assistant message and tool results to conversation
+        currentMessages = [
+          ...currentMessages,
+          { role: 'assistant', content: assistantContent },
+          { role: 'user', content: toolResults },
+        ]
+      }
+
+      // Update state
+      setClaudeMessages(currentMessages)
+      setDisplayMessages([
+        ...newDisplayMessages,
+        { role: 'assistant', content: finalText || 'Done!' },
+      ])
+    } catch (error: any) {
+      setDisplayMessages([
+        ...newDisplayMessages,
         {
           role: 'assistant',
-          content: "I'll help you with that! (Agent integration coming soon)",
+          content: `Sorry, I encountered an error: ${error.message}. Please make sure the API key is configured in .env.local.`,
         },
       ])
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -119,7 +240,7 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-thin">
-        {messages.length === 0 && !isLoading ? (
+        {displayMessages.length === 0 && !isLoading ? (
           <div className="h-full flex flex-col justify-end gap-4">
             <div className="text-center">
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-3">
@@ -144,7 +265,7 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
           </div>
         ) : (
           <div>
-            {messages.map((msg, i) => (
+            {displayMessages.map((msg, i) => (
               <AgentMessage
                 key={i}
                 role={msg.role}
@@ -172,7 +293,7 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Auxos anything…"
+            placeholder="Ask Auxos anything..."
             disabled={isLoading}
             rows={1}
             className={cn(
