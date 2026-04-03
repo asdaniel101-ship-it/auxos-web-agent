@@ -75,7 +75,12 @@ export function Header({ transparent = false }: HeaderProps) {
               ref={dropdownRef}
             >
               {mainNav.map((item) => (
-                <div key={item.label} className="relative">
+                <div
+                  key={item.label}
+                  className="relative"
+                  onMouseEnter={() => item.children && setActiveDropdown(item.label)}
+                  onMouseLeave={() => item.children && setActiveDropdown(null)}
+                >
                   {item.children ? (
                     <button
                       className={cn(
@@ -84,8 +89,7 @@ export function Header({ transparent = false }: HeaderProps) {
                           ? 'text-white/90 hover:text-white hover:bg-white/10'
                           : 'text-foreground hover:text-brand hover:bg-muted'
                       )}
-                      onMouseEnter={() => setActiveDropdown(item.label)}
-                      onMouseLeave={() => setActiveDropdown(null)}
+                      onClick={() => setActiveDropdown(activeDropdown === item.label ? null : item.label)}
                     >
                       {item.label}
                       <ChevronDown
@@ -111,20 +115,19 @@ export function Header({ transparent = false }: HeaderProps) {
 
                   {/* Dropdown */}
                   {item.children && activeDropdown === item.label && (
-                    <div
-                      className="absolute top-full left-0 mt-1 w-52 bg-white border border-border rounded-2xl shadow-warm-lg py-2 animate-slide-down"
-                      onMouseEnter={() => setActiveDropdown(item.label)}
-                      onMouseLeave={() => setActiveDropdown(null)}
-                    >
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.label}
-                          href={child.href}
-                          className="block px-4 py-2.5 text-sm text-foreground hover:text-brand hover:bg-muted transition-colors"
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
+                    <div className="absolute top-full left-0 pt-1 w-52 z-50">
+                      <div className="bg-white border border-border rounded-2xl shadow-warm-lg py-2">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.label}
+                            href={child.href}
+                            className="block px-4 py-2.5 text-sm text-foreground hover:text-brand hover:bg-muted transition-colors"
+                            onClick={() => setActiveDropdown(null)}
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
