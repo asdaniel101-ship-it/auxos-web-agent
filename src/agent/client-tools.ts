@@ -2,12 +2,14 @@
 
 import { tools as schemas } from './tools'
 import { executeTool } from './executor'
+import { queueVisualAction } from './visual-actions'
 import { useStore } from '@/store'
 import type { AuxosTool } from '@auxos/agent'
 
 /**
  * Bridge the CRM's existing tool schemas + executor to the SDK's AuxosTool format.
- * Each tool gets its schema from tools.ts and its execute function from executor.ts.
+ * Each tool gets its schema from tools.ts, its execute function from executor.ts,
+ * and queues visual cursor animations via visual-actions.ts.
  */
 export function getCrmTools(): AuxosTool[] {
   return schemas.map((schema): AuxosTool => ({
@@ -20,7 +22,14 @@ export function getCrmTools(): AuxosTool[] {
     },
     execute: (input: Record<string, unknown>) => {
       const store = useStore.getState()
-      return executeTool(schema.name, input, store)
+      const result = executeTool(schema.name, input, store)
+
+      // Queue visual cursor animation (runs async, doesn't block)
+      if (result.success) {
+        queueVisualAction(schema.name, input)
+      }
+
+      return result
     },
   }))
 }
