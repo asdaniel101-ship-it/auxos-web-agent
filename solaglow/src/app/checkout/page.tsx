@@ -422,8 +422,8 @@ export default function CheckoutPage() {
 
                 <Button
                   variant="primary"
-                  size="lg"
-                  className="w-full mt-2"
+                  size="xl"
+                  className="w-full mt-4"
                   onClick={handleContinueToPayment}
                 >
                   Continue to Payment
@@ -519,8 +519,8 @@ export default function CheckoutPage() {
 
                 <Button
                   variant="primary"
-                  size="lg"
-                  className="w-full mt-2"
+                  size="xl"
+                  className="w-full mt-4"
                   onClick={handleReviewOrder}
                 >
                   Review Order
