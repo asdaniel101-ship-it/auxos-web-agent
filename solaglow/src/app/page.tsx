@@ -2,6 +2,7 @@ import Hero from '@/components/home/Hero'
 import PressBar from '@/components/home/PressBar'
 import BestSellers from '@/components/home/BestSellers'
 import HowItWorks from '@/components/home/HowItWorks'
+import DoctorEndorsement from '@/components/home/DoctorEndorsement'
 import ResultsPreview from '@/components/home/ResultsPreview'
 import Testimonials from '@/components/home/Testimonials'
 import Newsletter from '@/components/home/Newsletter'
@@ -14,6 +15,7 @@ export default function Home() {
       <PressBar />
       <BestSellers />
       <HowItWorks />
+      <DoctorEndorsement />
       <ResultsPreview />
       <Testimonials />
       <Newsletter />

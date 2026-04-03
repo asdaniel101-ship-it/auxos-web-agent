@@ -1,8 +1,8 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { testimonials } from '@/data/products'
+import { BeforeAfterImage } from '@/components/ui/ProductImage'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ const beforeAfters = [
 
 const stats = [
   { value: '93%', label: 'improved skin texture after 4 weeks' },
-  { value: '89%', label: 'reduction in fine lines' },
+  { value: '89%', label: 'reduction in appearance of fine lines' },
   { value: '96%', label: 'would recommend to a friend' },
   { value: '2 weeks', label: 'average time to see results' },
 ]
@@ -120,26 +120,14 @@ export default function ResultsPage() {
               >
                 {/* Images */}
                 <div className="grid grid-cols-2">
-                  <div className="relative aspect-square">
-                    <Image
-                      src="https://placehold.co/300x300/D4C4B0/6B5B4E?text=Before"
-                      alt={`${person.name} before`}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
+                  <div className="relative">
+                    <BeforeAfterImage label="Before" variant="before" />
                     <span className="absolute bottom-2 left-2 bg-foreground/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide">
                       BEFORE
                     </span>
                   </div>
-                  <div className="relative aspect-square">
-                    <Image
-                      src="https://placehold.co/300x300/F5E6D3/8B7355?text=After"
-                      alt={`${person.name} after`}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
+                  <div className="relative">
+                    <BeforeAfterImage label="After" variant="after" />
                     <span className="absolute bottom-2 left-2 bg-brand/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide">
                       AFTER
                     </span>

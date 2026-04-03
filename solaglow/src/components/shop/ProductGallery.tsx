@@ -1,34 +1,33 @@
 'use client'
 
 import React, { useState } from 'react'
-import Image from 'next/image'
+import { ProductImage } from '@/components/ui/ProductImage'
 
 interface ProductGalleryProps {
   images: string[]
   name: string
+  category?: string
 }
 
-export function ProductGallery({ images, name }: ProductGalleryProps) {
+export function ProductGallery({ images, name, category = 'default' }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0)
 
   return (
     <div className="flex flex-col gap-4">
       {/* Main image */}
-      <div className="relative aspect-square w-full rounded-3xl overflow-hidden bg-muted shadow-warm-md">
-        <Image
-          src={images[activeIndex]}
-          alt={`${name} — image ${activeIndex + 1}`}
-          fill
-          className="object-cover transition-opacity duration-300"
-          sizes="(max-width: 768px) 100vw, 55vw"
-          priority
+      <div className="relative w-full rounded-3xl overflow-hidden bg-muted shadow-warm-md">
+        <ProductImage
+          name={name}
+          category={category}
+          size="lg"
+          className="rounded-3xl"
         />
       </div>
 
       {/* Thumbnail strip */}
       {images.length > 1 && (
         <div className="flex gap-3">
-          {images.map((src, i) => (
+          {images.map((_, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
@@ -39,12 +38,11 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
               }`}
               aria-label={`View image ${i + 1}`}
             >
-              <Image
-                src={src}
-                alt={`${name} thumbnail ${i + 1}`}
-                fill
-                className="object-cover"
-                sizes="80px"
+              <ProductImage
+                name={name}
+                category={category}
+                size="sm"
+                className="rounded-xl h-20"
               />
             </button>
           ))}

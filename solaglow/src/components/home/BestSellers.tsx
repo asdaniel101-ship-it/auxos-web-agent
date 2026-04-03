@@ -1,9 +1,9 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { products } from '@/data/products'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ProductImage } from '@/components/ui/ProductImage'
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
   return (
@@ -62,16 +62,15 @@ export default function BestSellers() {
               className="group bg-card rounded-2xl overflow-hidden border border-border/50 card-shadow hover:shadow-warm-lg transition-all duration-300 hover:-translate-y-1 flex flex-col"
             >
               {/* Product image */}
-              <div className="relative overflow-hidden bg-accent/20 aspect-square">
-                <Image
-                  src={product.images[0]}
-                  alt={product.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              <div className="relative overflow-hidden bg-accent/20">
+                <ProductImage
+                  name={product.name}
+                  category={product.category}
+                  size="sm"
+                  className="rounded-none group-hover:scale-105 transition-transform duration-500"
                 />
                 {product.badge && (
-                  <div className="absolute top-3 left-3">
+                  <div className="absolute top-3 left-3 z-10">
                     <Badge variant={badgeVariantFor(product.badge)}>
                       {product.badge}
                     </Badge>

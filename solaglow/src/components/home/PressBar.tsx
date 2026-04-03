@@ -1,4 +1,5 @@
 import { pressLogos } from '@/data/products'
+import { PressLogo } from '@/components/ui/PressLogo'
 
 export default function PressBar() {
   return (
@@ -15,9 +16,9 @@ export default function PressBar() {
           <div className="flex flex-wrap justify-center sm:justify-start items-center sm:pl-8 gap-0">
             {pressLogos.map((logo, index) => (
               <div key={logo} className="flex items-center">
-                <span className="font-heading text-xl sm:text-2xl italic font-medium text-foreground/40 hover:text-foreground/70 transition-colors duration-200 px-5 py-1 cursor-default whitespace-nowrap tracking-tight">
-                  {logo}
-                </span>
+                <div className="px-5 py-1">
+                  <PressLogo name={logo} />
+                </div>
                 {index < pressLogos.length - 1 && (
                   <span className="block h-5 w-px bg-border hidden sm:block" />
                 )}

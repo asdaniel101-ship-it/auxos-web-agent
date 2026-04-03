@@ -53,7 +53,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         <div className="flex flex-col lg:flex-row gap-12 xl:gap-16">
           {/* Left: Gallery (55%) */}
           <div className="lg:w-[55%]">
-            <ProductGallery images={product.images} name={product.name} />
+            <ProductGallery images={product.images} name={product.name} category={product.category} />
           </div>
 
           {/* Right: Info (45%) */}

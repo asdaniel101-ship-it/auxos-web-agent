@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Product } from '@/data/products'
 import { Badge, getBadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/utils'
+import { ProductImage } from '@/components/ui/ProductImage'
 
 interface ProductCardProps {
   product: Product
@@ -61,13 +61,12 @@ export function ProductCard({ product }: ProductCardProps) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <Link href={`/shop/${product.slug}`} className="block relative overflow-hidden aspect-square">
-        <Image
-          src={product.images[0]}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+      <Link href={`/shop/${product.slug}`} className="block relative overflow-hidden">
+        <ProductImage
+          name={product.name}
+          category={product.category}
+          size="sm"
+          className="rounded-none transition-transform duration-500 group-hover:scale-105"
         />
         {product.badge && (
           <div className="absolute top-3 left-3 z-10">

@@ -1,5 +1,5 @@
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { BeforeAfterImage } from '@/components/ui/ProductImage'
 
 const stats = [
   { value: '93%', label: 'saw improved skin texture' },
@@ -9,15 +9,12 @@ const stats = [
 
 const resultCards = [
   {
-    alt: 'Customer result 1 – before and after',
     label: '6 Weeks of Use',
   },
   {
-    alt: 'Customer result 2 – before and after',
     label: '4 Weeks of Use',
   },
   {
-    alt: 'Customer result 3 – before and after',
     label: '8 Weeks of Use',
   },
 ]
@@ -47,14 +44,11 @@ export default function ResultsPreview() {
               key={index}
               className="group rounded-2xl overflow-hidden border border-border/50 card-shadow hover:shadow-warm-lg transition-all duration-300"
             >
-              <div className="relative aspect-[4/3] overflow-hidden bg-accent/20">
-                <Image
-                  src="https://placehold.co/400x300/E8D5C8/6B5B4E?text=Before+%26+After"
-                  alt={card.alt}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 640px) 100vw, 33vw"
-                />
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="grid grid-cols-2 h-full">
+                  <BeforeAfterImage label="Before" variant="before" />
+                  <BeforeAfterImage label="After" variant="after" />
+                </div>
                 {/* Overlay label */}
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/40 to-transparent p-4">
                   <span className="text-white text-sm font-semibold tracking-wide">

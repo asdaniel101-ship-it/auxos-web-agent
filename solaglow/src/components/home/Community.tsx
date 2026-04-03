@@ -1,36 +1,10 @@
-import Image from 'next/image'
-
 const communityImages = [
-  {
-    src: 'https://placehold.co/400x400/E8D5C8/6B5B4E?text=%40solaglow',
-    alt: 'SolaGlow community photo 1',
-    span: 'col-span-1 row-span-1',
-  },
-  {
-    src: 'https://placehold.co/400x500/DEC8BA/5E4F44?text=%40glowwithme',
-    alt: 'SolaGlow community photo 2',
-    span: 'col-span-1 row-span-2',
-  },
-  {
-    src: 'https://placehold.co/400x400/F5E6D3/8B7355?text=%40skincarejoy',
-    alt: 'SolaGlow community photo 3',
-    span: 'col-span-1 row-span-1',
-  },
-  {
-    src: 'https://placehold.co/500x400/EDD9C2/7A6348?text=%40radiantlife',
-    alt: 'SolaGlow community photo 4',
-    span: 'col-span-2 row-span-1',
-  },
-  {
-    src: 'https://placehold.co/400x400/E8D5C8/6B5B4E?text=%40glowup',
-    alt: 'SolaGlow community photo 5',
-    span: 'col-span-1 row-span-1',
-  },
-  {
-    src: 'https://placehold.co/400x400/DEC8BA/5E4F44?text=%40solabeauty',
-    alt: 'SolaGlow community photo 6',
-    span: 'col-span-1 row-span-1',
-  },
+  { handle: '@solaglow', bg: 'from-amber-100 to-orange-200', span: 'col-span-1 row-span-1' },
+  { handle: '@glowwithme', bg: 'from-rose-100 to-pink-200', span: 'col-span-1 row-span-2' },
+  { handle: '@skincarejoy', bg: 'from-amber-50 to-yellow-100', span: 'col-span-1 row-span-1' },
+  { handle: '@radiantlife', bg: 'from-orange-100 to-amber-200', span: 'col-span-2 row-span-1' },
+  { handle: '@glowup', bg: 'from-rose-50 to-rose-200', span: 'col-span-1 row-span-1' },
+  { handle: '@solabeauty', bg: 'from-amber-100 to-stone-200', span: 'col-span-1 row-span-1' },
 ]
 
 export default function Community() {
@@ -56,15 +30,11 @@ export default function Community() {
           {communityImages.map((img, index) => (
             <div
               key={index}
-              className={`group relative overflow-hidden rounded-2xl bg-accent/20 ${img.span}`}
+              className={`group relative overflow-hidden rounded-2xl ${img.span}`}
             >
-              <Image
-                src={img.src}
-                alt={img.alt}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                sizes="(max-width: 640px) 50vw, 33vw"
-              />
+              <div className={`bg-gradient-to-br ${img.bg} w-full h-full flex items-center justify-center`}>
+                <span className="text-stone-500 font-medium text-sm">{img.handle}</span>
+              </div>
               {/* Hover overlay */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">

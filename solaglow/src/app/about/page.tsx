@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { PressLogo } from '@/components/ui/PressLogo'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -56,19 +56,19 @@ const team = [
   {
     name: 'Dr. Alicia Chen',
     title: 'Founder & Chief Scientist',
-    avatar: 'https://placehold.co/200x200/E8D5C8/6B5B4E?text=AC',
+    initials: 'AC',
     bio: 'Board-certified dermatologist with 15+ years of clinical research in photobiomodulation and skin biology.',
   },
   {
     name: 'Marcus Rivera',
     title: 'Head of Product Design',
-    avatar: 'https://placehold.co/200x200/D4C4B0/5E4F44?text=MR',
+    initials: 'MR',
     bio: 'Former Apple designer with a passion for merging clinical precision with beautiful, intuitive consumer hardware.',
   },
   {
     name: 'Sarah Kim',
     title: 'VP of Community & Education',
-    avatar: 'https://placehold.co/200x200/EDD9C2/7A6348?text=SK',
+    initials: 'SK',
     bio: 'Licensed esthetician and educator dedicated to making professional skincare knowledge accessible to everyone.',
   },
 ]
@@ -149,16 +149,15 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* Image */}
+            {/* Image placeholder */}
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden aspect-[4/5] shadow-warm-xl">
-                <Image
-                  src="https://placehold.co/600x750/E8D5C8/6B5B4E?text=SolaGlow+Story"
-                  alt="SolaGlow founder in the lab"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
+                <div className="bg-gradient-to-br from-amber-100 to-orange-200 w-full h-full flex items-center justify-center">
+                  <div className="text-center px-6">
+                    <div className="text-amber-800 font-heading font-semibold text-xl">SolaGlow Story</div>
+                    <div className="text-amber-700 opacity-60 text-sm mt-1">Founded 2021</div>
+                  </div>
+                </div>
               </div>
               {/* Floating accent card */}
               <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-warm-lg p-5 border border-border max-w-[220px]">
@@ -236,15 +235,11 @@ export default function AboutPage() {
                 key={member.name}
                 className="bg-white rounded-2xl border border-border p-8 flex flex-col items-center text-center gap-5 hover:shadow-warm-md transition-all duration-300"
               >
-                {/* Avatar */}
-                <div className="relative w-24 h-24 rounded-full overflow-hidden ring-4 ring-brand/10">
-                  <Image
-                    src={member.avatar}
-                    alt={member.name}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
+                {/* Avatar with initials */}
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center ring-4 ring-brand/10">
+                  <span className="font-heading text-2xl font-bold text-brand">
+                    {member.initials}
+                  </span>
                 </div>
 
                 {/* Info */}
@@ -273,12 +268,7 @@ export default function AboutPage() {
           <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-12">
             {['Vogue', 'Allure', "Harper's Bazaar", 'Elle', 'Cosmopolitan', 'InStyle'].map(
               (pub) => (
-                <span
-                  key={pub}
-                  className="font-heading text-lg font-semibold text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-default"
-                >
-                  {pub}
-                </span>
+                <PressLogo key={pub} name={pub} />
               )
             )}
           </div>
