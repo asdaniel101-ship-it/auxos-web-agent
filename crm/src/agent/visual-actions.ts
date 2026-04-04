@@ -123,6 +123,7 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
   switch (toolName) {
     case 'send_email':
       return queueAgentSteps([
+        ...navClick('Emails'),
         ...emailComposeSteps(input),
         { type: 'click', selector: 'button[aria-label="Send email"]' },
         { type: 'wait', delay: 500 },
@@ -130,6 +131,7 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_contact':
       return queueAgentSteps([
+        ...navClick('Contacts'),
         { type: 'click', selector: 'button[aria-label="Add new contact"]' },
         { type: 'wait', delay: 600 },
         { type: 'type', selector: '#cf-firstName', text: (input.firstName as string) || '' },
@@ -140,6 +142,7 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_company':
       return queueAgentSteps([
+        ...navClick('Companies'),
         { type: 'click', selector: 'button[aria-label="Add new company"]' },
         { type: 'wait', delay: 600 },
         { type: 'type', selector: '#cf-name', text: (input.name as string) || '' },
@@ -148,6 +151,7 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_deal':
       return queueAgentSteps([
+        ...navClick('Deals'),
         { type: 'click', selector: 'button[aria-label="Add new deal"]' },
         { type: 'wait', delay: 600 },
         { type: 'type', selector: '#df-name', text: (input.name as string) || '' },
@@ -156,9 +160,45 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_task':
       return queueAgentSteps([
+        ...navClick('Tasks'),
         { type: 'click', selector: 'button[aria-label="Add new task"]' },
         { type: 'wait', delay: 600 },
         { type: 'type', selector: '#tf-name', text: (input.name as string) || '' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'onboard_client':
+      return queueAgentSteps([
+        ...navClick('Companies'),
+        { type: 'click', selector: 'button[aria-label="Add new company"]' },
+        { type: 'wait', delay: 500 },
+        { type: 'type', selector: '#cf-name', text: (input.companyName as string) || '' },
+        { type: 'wait', delay: 300 },
+        ...navClick('Contacts'),
+        { type: 'click', selector: 'button[aria-label="Add new contact"]' },
+        { type: 'wait', delay: 500 },
+        { type: 'type', selector: '#cf-firstName', text: (input.contactFirstName as string) || '' },
+        { type: 'type', selector: '#cf-lastName', text: (input.contactLastName as string) || '' },
+        { type: 'type', selector: '#cf-email', text: (input.contactEmail as string) || '' },
+        { type: 'wait', delay: 300 },
+        ...navClick('Deals'),
+        { type: 'click', selector: 'button[aria-label="Add new deal"]' },
+        { type: 'wait', delay: 500 },
+        { type: 'type', selector: '#df-name', text: (input.dealName as string) || '' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'complete_task':
+      return queueAgentSteps([
+        ...navClick('Tasks'),
+        { type: 'click', selector: `[data-task-id="${input.id}"] button[role="checkbox"]` },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'move_deal_stage':
+      return queueAgentSteps([
+        ...navClick('Deals'),
+        { type: 'move', selector: `[data-deal-id="${input.id}"]` },
         { type: 'wait', delay: 400 },
       ])
 

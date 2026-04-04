@@ -7,6 +7,7 @@ interface CursorPosition {
   y: number
   visible: boolean
   clicking: boolean
+  moveDuration: number
 }
 
 interface AgentStep {
@@ -21,8 +22,19 @@ type QueueItem = {
   resolve: () => void
 }
 
-const queue: QueueItem[] = []
+/** Minimum move duration so very short moves don't look instant */
+const MIN_MOVE_MS = 200
+/** Constant speed: pixels per second */
+const MOVE_PX_PER_SEC = 400
+
 let aborted = false
+
+// Use a global queue on window to avoid module duplication in Next.js
+function getQueue(): QueueItem[] {
+  const w = window as any
+  if (!w.__agentCursorQueue) w.__agentCursorQueue = []
+  return w.__agentCursorQueue
+}
 
 /**
  * Cancel all pending cursor animation steps.
@@ -30,6 +42,7 @@ let aborted = false
  */
 export function cancelAllSteps() {
   aborted = true
+  const queue = getQueue()
   while (queue.length > 0) {
     const item = queue.shift()!
     item.resolve()
@@ -42,20 +55,57 @@ export function cancelAllSteps() {
  */
 export function queueAgentSteps(steps: AgentStep[]): Promise<void> {
   return new Promise((resolve) => {
-    queue.push({ steps, resolve })
+    getQueue().push({ steps, resolve })
     window.dispatchEvent(new CustomEvent('agent-steps-queued'))
   })
 }
 
 export function AgentCursor() {
-  const [pos, setPos] = useState<CursorPosition>({ x: -100, y: -100, visible: false, clicking: false })
+  const [pos, setPos] = useState<CursorPosition>({
+    x: -100,
+    y: -100,
+    visible: false,
+    clicking: false,
+    moveDuration: 0,
+  })
   const processingRef = useRef(false)
+  const lastPosRef = useRef({ x: -1, y: -1 })
+  const clickCountRef = useRef(0)
+
+  /**
+   * Calculate move duration based on pixel distance at constant speed.
+   */
+  function calcMoveDuration(fromX: number, fromY: number, toX: number, toY: number): number {
+    const dx = toX - fromX
+    const dy = toY - fromY
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    const ms = (dist / MOVE_PX_PER_SEC) * 1000
+    return Math.max(MIN_MOVE_MS, ms)
+  }
+
+  function moveTo(x: number, y: number): number {
+    const duration = calcMoveDuration(lastPosRef.current.x, lastPosRef.current.y, x, y)
+    lastPosRef.current = { x, y }
+    setPos((p) => ({ ...p, x, y, clicking: false, moveDuration: duration }))
+    return duration
+  }
 
   const processQueue = useCallback(async () => {
+    const queue = getQueue()
     if (processingRef.current || queue.length === 0) return
     processingRef.current = true
     aborted = false
+
+    // Always start from the chat button position (bottom-right corner)
+    const startX = window.innerWidth - 34
+    const startY = window.innerHeight - 34
+    lastPosRef.current = { x: startX, y: startY }
+    setPos((p) => ({ ...p, x: startX, y: startY, moveDuration: 0 }))
+
+    // Small delay so the opacity transition has a frame to start from
+    await sleep(30)
     setPos((p) => ({ ...p, visible: true }))
+    await sleep(350) // let fade-in complete
 
     while (queue.length > 0) {
       if (aborted) break
@@ -75,36 +125,35 @@ export function AgentCursor() {
 
           case 'move': {
             if (!step.selector) break
-            const el = await waitForElement(step.selector, 2000)
+            const el = await waitForElement(step.selector, 2500)
             if (!el || aborted) break
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            await sleep(150)
             const rect = el.getBoundingClientRect()
-            setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
-            await sleep(600)
+            const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+            await sleep(dur + 80)
             break
           }
 
           case 'click': {
             if (!step.selector) break
-            const el = await waitForElement(step.selector, 2000)
+            const el = await waitForElement(step.selector, 2500)
             if (!el || aborted) break
-            // Skip scroll for elements inside portals/dropdowns — scrolling
-            // an ancestor would cause Radix to close the popover.
+            // Skip scroll for elements inside portals/dropdowns
             const inPortal = el.closest('[data-radix-popper-content-wrapper]') || el.closest('[role="listbox"]')
             if (!inPortal) {
               el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              await sleep(300)
+              await sleep(150)
             }
             const rect = el.getBoundingClientRect()
-            // Move to element
-            setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
-            await sleep(500)
+            const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+            await sleep(dur + 80)
             if (aborted) break
             // Click animation
+            clickCountRef.current++
             setPos((p) => ({ ...p, clicking: true }))
-            await sleep(200)
-            setPos((p) => ({ ...p, clicking: false }))
-            // Dispatch full pointer event sequence (Radix UI needs pointerdown/pointerup
-            // with pointerType: 'mouse' for Select item selection to trigger)
+            await sleep(180)
+            // Dispatch full pointer event sequence (Radix UI needs this)
             const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
             const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
             el.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
@@ -112,7 +161,9 @@ export function AgentCursor() {
             el.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
             el.dispatchEvent(new MouseEvent('mouseup', center))
             ;(el as HTMLElement).click()
-            await sleep(500)
+            await sleep(120)
+            setPos((p) => ({ ...p, clicking: false }))
+            await sleep(250)
             break
           }
 
@@ -124,34 +175,40 @@ export function AgentCursor() {
             await sleep(200)
             const rect = el.getBoundingClientRect()
             // Move to field
-            setPos((p) => ({ ...p, x: rect.left + 40, y: rect.top + rect.height / 2, clicking: false }))
-            await sleep(400)
+            const dur = moveTo(rect.left + 40, rect.top + rect.height / 2)
+            await sleep(dur + 80)
             // Click to focus
+            clickCountRef.current++
             setPos((p) => ({ ...p, clicking: true }))
             await sleep(150)
             setPos((p) => ({ ...p, clicking: false }))
             el.focus()
             el.click()
-            await sleep(200)
+            await sleep(180)
             if (aborted) break
-            // Paste the full value at once
+            // Type character by character
             const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
             const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
-            const fullValue = (el.value || '') + step.text
-            if (nativeSetter) {
-              nativeSetter.call(el, fullValue)
-            } else {
-              el.value = fullValue
+            let currentValue = el.value || ''
+            for (let i = 0; i < step.text.length; i++) {
+              const char = step.text[i]
+              currentValue += char
+              if (nativeSetter) {
+                nativeSetter.call(el, currentValue)
+              } else {
+                el.value = currentValue
+              }
+              el.dispatchEvent(new Event('input', { bubbles: true }))
+              const isSpace = char === ' '
+              const baseDelay = isSpace ? 60 : 35
+              const jitter = Math.random() * 40
+              await sleep(baseDelay + jitter)
             }
-            el.dispatchEvent(new Event('input', { bubbles: true }))
-            el.dispatchEvent(new Event('change', { bubbles: true }))
-            await sleep(300)
+            await sleep(200)
             break
           }
 
           case 'dismiss': {
-            // Close any open dropdown/popover without closing the parent dialog.
-            // Dispatch Escape on the listbox so Radix's topmost layer handles it.
             const listbox = document.querySelector('[role="listbox"]')
             if (listbox) {
               listbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
@@ -169,19 +226,24 @@ export function AgentCursor() {
 
       // Resolve this queue item's promise so the caller can proceed
       item.resolve()
+
+      // If more items are queued, add a brief inter-tool pause
+      if (queue.length > 0) {
+        await sleep(300)
+      }
     }
 
-    // Hide cursor (skip if aborted — cancelAllSteps already resolved all promises)
+    // Fade out gracefully
     if (!aborted) {
-      await sleep(500)
+      await sleep(400)
     }
     setPos((p) => ({ ...p, visible: false }))
+    await sleep(400)
     processingRef.current = false
     aborted = false
 
-    // Items may have been queued during the hide-cursor sleep while
-    // processingRef was still true (event handler bailed early). Restart.
-    if (queue.length > 0) {
+    // Items may have been queued during the hide-cursor sleep
+    if (getQueue().length > 0) {
       processQueue()
     }
   }, [])
@@ -198,17 +260,17 @@ export function AgentCursor() {
         position: 'fixed',
         left: pos.x - 4,
         top: pos.y - 2,
-        width: '24px',
-        height: '24px',
+        width: '28px',
+        height: '28px',
         pointerEvents: 'none',
         zIndex: 99999,
-        transition: 'left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s, opacity 0.3s',
+        transition: `left ${pos.moveDuration}ms cubic-bezier(0.4, 0, 0.2, 1), top ${pos.moveDuration}ms cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s, opacity 0.35s`,
         transform: pos.clicking ? 'scale(0.75)' : 'scale(1)',
         opacity: pos.visible ? 1 : 0,
         filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
       }}
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
         <path
           d="M5 3L19 12L12 13L9 20L5 3Z"
           fill="#6366f1"
@@ -218,25 +280,37 @@ export function AgentCursor() {
         />
       </svg>
       {pos.clicking && (
-        <div
-          style={{
-            position: 'absolute',
-            left: '4px',
-            top: '2px',
-            width: '16px',
-            height: '16px',
-            borderRadius: '50%',
-            border: '2px solid rgba(99, 102, 241, 0.5)',
-            animation: 'agent-ripple 0.5s ease-out forwards',
-          }}
-        />
+        <>
+          <div
+            key={`ripple-${clickCountRef.current}`}
+            style={{
+              position: 'absolute',
+              borderRadius: '50%',
+              border: '2px solid rgba(99, 102, 241, 0.5)',
+              animation: 'agent-ripple 0.6s ease-out forwards',
+              width: '16px',
+              height: '16px',
+              opacity: 0.8,
+              left: '6px',
+              top: '4px',
+            }}
+          />
+          <div
+            key={`ripple2-${clickCountRef.current}`}
+            style={{
+              position: 'absolute',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(99, 102, 241, 0.15)',
+              animation: 'agent-ripple-fill 0.4s ease-out forwards',
+              width: '16px',
+              height: '16px',
+              opacity: 0.3,
+              left: '6px',
+              top: '4px',
+            }}
+          />
+        </>
       )}
-      <style>{`
-        @keyframes agent-ripple {
-          0% { width: 16px; height: 16px; opacity: 0.7; left: 4px; top: 2px; }
-          100% { width: 48px; height: 48px; opacity: 0; left: -12px; top: -14px; }
-        }
-      `}</style>
     </div>
   )
 }
