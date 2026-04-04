@@ -1,0 +1,67 @@
+<h2>Smart Popup Agent — Approach Comparison</h2>
+<p class="subtitle">How should we architect the idle-detection + peek-in experience?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Client-Side Idle Watcher</h3>
+      <p><strong>How it works:</strong> A React hook (<code>useIdleDetection</code>) tracks mouse movement, clicks, scrolls, and keystrokes per page. After a configurable idle threshold (e.g., 30s), it triggers the peek animation. The hook is page-aware — it knows which CRM page you're on and passes that context to the agent's opening message.</p>
+      <p><strong>Peek behavior:</strong> The agent character slides in from the right edge of the screen with a soft ambient glow radiating behind it. A small speech bubble shows a contextual message like "Stuck on contacts? I can help you find someone." Clicking it opens the existing chat panel with that message pre-loaded.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Simple — no new APIs, all client-side</li>
+          <li>Fast to ship — hooks into existing agent infra</li>
+          <li>Easy to tune thresholds per page</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Limited "intelligence" — just a timer, doesn't truly understand user intent</li>
+          <li>Could feel random if thresholds aren't well-tuned</li>
+        </ul></div>
+      </div>
+      <p style="margin-top:12px;color:#10b981;font-weight:600;">Recommended — simplest path to the full experience</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>LLM-Powered Context Evaluator</h3>
+      <p><strong>How it works:</strong> Same idle detection as A, but when idle is detected, we send a lightweight LLM call with context (current page, visible data summary, recent navigation history) to decide <em>whether</em> to pop up and <em>what to say</em>. The LLM generates the peek message dynamically.</p>
+      <p><strong>Peek behavior:</strong> Same peek-in animation and glow, but the message is AI-generated and highly contextual. Instead of "Need help with contacts?" it might say "I see you have 3 contacts without email addresses — want me to help fill those in?"</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Genuinely intelligent — messages feel personal and relevant</li>
+          <li>Can analyze the actual data on screen</li>
+          <li>Differentiating — no one else does this</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>API cost on every idle trigger (needs throttling)</li>
+          <li>Latency — 1-3s delay before peek appears while LLM responds</li>
+          <li>More complex to build and test</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid: Client Rules + LLM Fallback</h3>
+      <p><strong>How it works:</strong> A rules engine maps each CRM page to pre-written contextual messages (e.g., on Deals page → "Want me to update any deal stages?"). These fire instantly on idle with no API call. For pages without specific rules, or after the user dismisses a canned message, fall back to an LLM call for a smarter suggestion.</p>
+      <p><strong>Peek behavior:</strong> Same visual treatment. First peek is instant (pre-written). If dismissed and user stays idle again, the second peek is LLM-powered and more specific.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Best of both worlds — instant first peek, smart follow-up</li>
+          <li>Low cost — most interactions never hit the API</li>
+          <li>Progressive sophistication</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Most complex to build — two systems to maintain</li>
+          <li>Pre-written messages need ongoing curation</li>
+          <li>Overkill for a first version</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

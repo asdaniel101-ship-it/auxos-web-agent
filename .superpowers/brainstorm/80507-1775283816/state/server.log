@@ -1,0 +1,2 @@
+{"type":"server-started","port":52181,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:52181","screen_dir":"/Users/jerrywu/conductor/workspaces/auxos-web-agent/tacoma/.superpowers/brainstorm/80507-1775283816/content","state_dir":"/Users/jerrywu/conductor/workspaces/auxos-web-agent/tacoma/.superpowers/brainstorm/80507-1775283816/state"}
+{"type":"server-stopped","reason":"owner process exited"}
