@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[80vh] flex items-center overflow-hidden bg-gradient-to-br from-[#F5E6D3] via-[#FAF2EA] to-[#FAF7F2]">
+    <section data-section="hero" className="relative min-h-[80vh] flex items-center overflow-hidden bg-gradient-to-br from-[#F5E6D3] via-[#FAF2EA] to-[#FAF7F2]">
       {/* Decorative background circles */}
       <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-[#EDD9C2]/30 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#E8D5C8]/25 blur-3xl pointer-events-none" />

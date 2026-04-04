@@ -99,7 +99,7 @@ export default function SciencePage() {
       </section>
 
       {/* ── How LED Works ── */}
-      <section className="py-20 lg:py-24">
+      <section data-section="led-wavelengths" className="py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
           <div className="text-center mb-14">
@@ -173,7 +173,7 @@ export default function SciencePage() {
       </section>
 
       {/* ── Clinical Results Stats ── */}
-      <section className="py-20 lg:py-24 bg-gradient-to-br from-[#F7EDE0] to-[#EDD9C8]">
+      <section data-section="clinical-results" className="py-20 lg:py-24 bg-gradient-to-br from-[#F7EDE0] to-[#EDD9C8]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
           <div className="text-center mb-14">
@@ -206,7 +206,7 @@ export default function SciencePage() {
       </section>
 
       {/* ── Research & Studies ── */}
-      <section className="py-20 lg:py-24">
+      <section data-section="research" className="py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
           <div className="text-center mb-14">

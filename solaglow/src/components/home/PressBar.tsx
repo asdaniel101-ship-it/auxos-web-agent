@@ -8,7 +8,7 @@ const logos = [
 
 export default function PressBar() {
   return (
-    <section className="bg-[#FDFAF6] border-y border-border py-10">
+    <section data-section="press-bar" className="bg-[#FDFAF6] border-y border-border py-10">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-0">
 

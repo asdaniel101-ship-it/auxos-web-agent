@@ -72,6 +72,10 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "blink": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.4s ease-out",
@@ -81,6 +85,7 @@ const config: Config = {
         "slide-in-right": "slide-in-right 0.4s ease-out",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "blink": "blink 1s steps(2) infinite",
       },
       boxShadow: {
         "warm-sm": "0 1px 3px rgba(196, 149, 106, 0.12)",

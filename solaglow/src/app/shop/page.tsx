@@ -69,6 +69,7 @@ export default function ShopPage() {
             {categories.map(({ label, value }) => (
               <button
                 key={value}
+                data-filter={value}
                 onClick={() => setActiveCategory(value)}
                 className={cn(
                   'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border',

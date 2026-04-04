@@ -99,7 +99,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Brand Story ── */}
-      <section className="py-20 lg:py-28">
+      <section data-section="brand-story" className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
 
@@ -171,7 +171,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Values ── */}
-      <section className="py-20 lg:py-24 bg-gradient-to-br from-[#F7EDE0] to-[#EDD9C8]">
+      <section data-section="values" className="py-20 lg:py-24 bg-gradient-to-br from-[#F7EDE0] to-[#EDD9C8]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
           <div className="text-center mb-14">
@@ -211,7 +211,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── Team ── */}
-      <section className="py-20 lg:py-24">
+      <section data-section="team" className="py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
           <div className="text-center mb-14">

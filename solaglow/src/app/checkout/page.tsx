@@ -118,6 +118,7 @@ function InputField({
       </label>
       <input
         id={id}
+        data-checkout-field={id}
         {...props}
         className={cn(
           'h-11 w-full rounded-xl border border-border bg-white px-3.5 text-sm text-foreground placeholder:text-muted-foreground',

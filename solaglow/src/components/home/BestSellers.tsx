@@ -41,7 +41,7 @@ const displayProducts = bestSellers.length >= 4 ? bestSellers.slice(0, 4) : prod
 
 export default function BestSellers() {
   return (
-    <section className="py-20 lg:py-24 bg-background">
+    <section data-section="best-sellers" className="py-20 lg:py-24 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
         {/* Section header */}

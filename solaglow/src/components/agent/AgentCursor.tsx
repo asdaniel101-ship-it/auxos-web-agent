@@ -1,0 +1,205 @@
+'use client'
+
+import { useEffect, useState, useCallback, useRef } from 'react'
+
+interface CursorPosition {
+  x: number
+  y: number
+  visible: boolean
+  clicking: boolean
+}
+
+interface AgentStep {
+  type: 'move' | 'click' | 'type' | 'wait' | 'scroll-to'
+  selector?: string
+  text?: string
+  delay?: number
+}
+
+type QueueItem = {
+  steps: AgentStep[]
+  resolve: () => void
+}
+
+const queue: QueueItem[] = []
+
+export function queueAgentSteps(steps: AgentStep[]): Promise<void> {
+  return new Promise((resolve) => {
+    queue.push({ steps, resolve })
+    window.dispatchEvent(new CustomEvent('agent-steps-queued'))
+  })
+}
+
+export function AgentCursor() {
+  const [pos, setPos] = useState<CursorPosition>({ x: -100, y: -100, visible: false, clicking: false })
+  const processingRef = useRef(false)
+
+  const processQueue = useCallback(async () => {
+    if (processingRef.current || queue.length === 0) return
+    processingRef.current = true
+    setPos((p) => ({ ...p, visible: true }))
+
+    while (queue.length > 0) {
+      const item = queue.shift()!
+
+      for (const step of item.steps) {
+        switch (step.type) {
+          case 'scroll-to': {
+            if (!step.selector) break
+            const el = document.querySelector(step.selector)
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            await sleep(400)
+            break
+          }
+
+          case 'move': {
+            if (!step.selector) break
+            const el = await waitForElement(step.selector, 2000)
+            if (!el) break
+            const rect = el.getBoundingClientRect()
+            setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
+            await sleep(600)
+            break
+          }
+
+          case 'click': {
+            if (!step.selector) break
+            const el = await waitForElement(step.selector, 2000)
+            if (!el) break
+            const rect = el.getBoundingClientRect()
+            setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
+            await sleep(500)
+            setPos((p) => ({ ...p, clicking: true }))
+            await sleep(200)
+            setPos((p) => ({ ...p, clicking: false }))
+            ;(el as HTMLElement).click()
+            await sleep(500)
+            break
+          }
+
+          case 'type': {
+            if (!step.selector || !step.text) break
+            const el = await waitForElement(step.selector, 3000) as HTMLInputElement | HTMLTextAreaElement | null
+            if (!el) break
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            await sleep(200)
+            const rect = el.getBoundingClientRect()
+            setPos((p) => ({ ...p, x: rect.left + 40, y: rect.top + rect.height / 2, clicking: false }))
+            await sleep(400)
+            setPos((p) => ({ ...p, clicking: true }))
+            await sleep(150)
+            setPos((p) => ({ ...p, clicking: false }))
+            el.focus()
+            el.click()
+            await sleep(200)
+            const nativeSetter =
+              Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set ||
+              Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+            let currentValue = el.value || ''
+            for (const char of step.text) {
+              currentValue += char
+              if (nativeSetter) {
+                nativeSetter.call(el, currentValue)
+              } else {
+                el.value = currentValue
+              }
+              el.dispatchEvent(new Event('input', { bubbles: true }))
+              el.dispatchEvent(new Event('change', { bubbles: true }))
+              await sleep(40 + Math.random() * 50)
+            }
+            await sleep(300)
+            break
+          }
+
+          case 'wait': {
+            await sleep(step.delay || 500)
+            break
+          }
+        }
+      }
+
+      item.resolve()
+    }
+
+    await sleep(500)
+    setPos((p) => ({ ...p, visible: false }))
+    processingRef.current = false
+  }, [])
+
+  useEffect(() => {
+    const handler = () => processQueue()
+    window.addEventListener('agent-steps-queued', handler)
+    return () => window.removeEventListener('agent-steps-queued', handler)
+  }, [processQueue])
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: pos.x - 4,
+        top: pos.y - 2,
+        width: '24px',
+        height: '24px',
+        pointerEvents: 'none',
+        zIndex: 99999,
+        transition: 'left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s, opacity 0.3s',
+        transform: pos.clicking ? 'scale(0.75)' : 'scale(1)',
+        opacity: pos.visible ? 1 : 0,
+        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+      }}
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 3L19 12L12 13L9 20L5 3Z"
+          fill="#B8860B"
+          stroke="#ffffff"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {pos.clicking && (
+        <div
+          style={{
+            position: 'absolute',
+            left: '4px',
+            top: '2px',
+            width: '16px',
+            height: '16px',
+            borderRadius: '50%',
+            border: '2px solid rgba(184, 134, 11, 0.5)',
+            animation: 'agent-ripple 0.5s ease-out forwards',
+          }}
+        />
+      )}
+      <style>{`
+        @keyframes agent-ripple {
+          0% { width: 16px; height: 16px; opacity: 0.7; left: 4px; top: 2px; }
+          100% { width: 48px; height: 48px; opacity: 0; left: -12px; top: -14px; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function waitForElement(selector: string, timeout: number): Promise<Element | null> {
+  return new Promise((resolve) => {
+    const el = document.querySelector(selector)
+    if (el) return resolve(el)
+
+    const start = Date.now()
+    const interval = setInterval(() => {
+      const el = document.querySelector(selector)
+      if (el) {
+        clearInterval(interval)
+        resolve(el)
+      } else if (Date.now() - start > timeout) {
+        clearInterval(interval)
+        resolve(null)
+      }
+    }, 100)
+  })
+}

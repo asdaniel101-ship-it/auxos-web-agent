@@ -27,7 +27,7 @@ const guaranteeItems = [
 
 export function GuaranteeBanner() {
   return (
-    <section className="py-16 bg-[#1A1A1A]">
+    <section data-section="guarantee" className="py-16 bg-[#1A1A1A]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid sm:grid-cols-3 gap-8">
           {guaranteeItems.map((item) => (

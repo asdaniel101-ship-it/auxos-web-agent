@@ -24,7 +24,7 @@ const doctors = [
 
 export default function DoctorEndorsement() {
   return (
-    <section className="py-20 lg:py-24 bg-gradient-to-br from-[#FDFAF6] to-[#F5EDE2]">
+    <section data-section="doctor-endorsement" className="py-20 lg:py-24 bg-gradient-to-br from-[#FDFAF6] to-[#F5EDE2]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         {/* Section header */}
         <div className="text-center mb-14">

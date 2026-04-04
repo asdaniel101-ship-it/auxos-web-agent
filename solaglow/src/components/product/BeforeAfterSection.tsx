@@ -21,7 +21,7 @@ const results = [
 
 export function BeforeAfterSection() {
   return (
-    <section className="py-20 bg-background">
+    <section data-section="before-after" className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">

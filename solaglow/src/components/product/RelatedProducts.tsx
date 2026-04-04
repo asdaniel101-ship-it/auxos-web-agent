@@ -47,7 +47,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export function RelatedProducts({ products }: RelatedProductsProps) {
   return (
-    <section className="py-20 bg-background">
+    <section data-section="related-products" className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">

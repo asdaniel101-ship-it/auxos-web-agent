@@ -26,7 +26,7 @@ const resultCards = [
 
 export default function ResultsPreview() {
   return (
-    <section className="py-20 lg:py-24 bg-background">
+    <section data-section="results-preview" className="py-20 lg:py-24 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
         {/* Section header */}

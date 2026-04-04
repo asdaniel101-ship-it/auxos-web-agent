@@ -88,7 +88,7 @@ export default function ResultsPage() {
     <div className="bg-[#FAF7F2]">
 
       {/* ── Hero ── */}
-      <section className="relative py-24 lg:py-32 overflow-hidden">
+      <section data-section="hero" className="relative py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#FDF6EE] via-[#F7EDE0] to-[#EDD9C8]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(196,149,106,0.18),transparent)]" />
 

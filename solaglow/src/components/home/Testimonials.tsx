@@ -17,7 +17,7 @@ const displayTestimonials = testimonials.slice(0, 3)
 
 export default function Testimonials() {
   return (
-    <section className="py-20 lg:py-24 bg-gradient-to-b from-[#FBF5EF] to-[#FAF7F2]">
+    <section data-section="testimonials" className="py-20 lg:py-24 bg-gradient-to-b from-[#FBF5EF] to-[#FAF7F2]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
         {/* Section header */}

@@ -7,7 +7,7 @@ export function MetricsBanner() {
   ]
 
   return (
-    <section className="bg-gradient-to-r from-[#C4956A] via-[#D4AA87] to-[#C4956A] py-16">
+    <section data-section="clinical-results" className="bg-gradient-to-r from-[#C4956A] via-[#D4AA87] to-[#C4956A] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {metrics.map((metric) => (

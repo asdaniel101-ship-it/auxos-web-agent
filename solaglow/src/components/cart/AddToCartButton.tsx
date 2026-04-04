@@ -43,7 +43,7 @@ export function AddToCartButton({
 
   return (
     <>
-      <Button variant={variant} size={size} className={className} onClick={handleAdd}>
+      <Button variant={variant} size={size} className={className} onClick={handleAdd} data-add-to-cart>
         {showIcon && <ShoppingBag className="w-4 h-4 mr-2" />}
         {children || 'Add to Cart'}
       </Button>
