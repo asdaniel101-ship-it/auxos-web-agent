@@ -6,8 +6,7 @@ import { cn } from '@/lib/utils'
 import { AgentMessage } from './AgentMessage'
 import { useRouter, usePathname } from 'next/navigation'
 import { executeTool } from '@/agent/executor'
-import { queueVisualAction } from '@/agent/visual-actions'
-import { queueAgentSteps } from './AgentCursor'
+import { queuePreAction, queuePostNavigationAction } from '@/agent/visual-actions'
 
 interface ClaudeMessage {
   role: 'user' | 'assistant'
@@ -127,37 +126,27 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
 
         const toolResults: any[] = []
         for (const toolUse of toolUseBlocks) {
-          // Play visual animation FIRST
-          await queueVisualAction(toolUse.name, toolUse.input)
+          // 1. Pre-action: animate on CURRENT page (clicks, typing, etc)
+          await queuePreAction(toolUse.name, toolUse.input)
 
-          // THEN execute the tool
+          // 2. Execute the tool
           const result = executeTool(toolUse.name, toolUse.input)
 
-          // Handle navigation
-          if (
+          // 3. Handle navigation if the tool result says to navigate
+          const hasNavigate =
             result.success &&
             result.data &&
             typeof result.data === 'object' &&
             'navigate' in (result.data as any)
-          ) {
+
+          if (hasNavigate) {
             router.push((result.data as any).navigate)
-            // Wait for navigation
-            await new Promise((r) => setTimeout(r, 500))
+            // Wait for the new page to render
+            await new Promise((r) => setTimeout(r, 800))
           }
 
-          // Handle scroll-to after navigation
-          if (
-            result.success &&
-            result.data &&
-            typeof result.data === 'object' &&
-            'scrollTo' in (result.data as any)
-          ) {
-            const section = (result.data as any).scrollTo
-            await queueAgentSteps([
-              { type: 'scroll-to', selector: `[data-section="${section}"]` },
-              { type: 'wait', delay: 400 },
-            ])
-          }
+          // 4. Post-navigation: animate on DESTINATION page (scroll, highlight)
+          await queuePostNavigationAction(toolUse.name, toolUse.input, result)
 
           toolResults.push({
             type: 'tool_result',
