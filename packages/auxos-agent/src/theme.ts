@@ -35,6 +35,9 @@ export const defaultTheme: AuxosTheme = {
     assistantBubbleText: '#1e293b',
     inputBackground: '#f8fafc',
     inputBorder: '#e2e8f0',
+    glassBg: 'rgba(15, 17, 23, 0.7)',
+    glassSurface: 'rgba(255, 255, 255, 0.08)',
+    glassBorder: 'rgba(255, 255, 255, 0.1)',
   },
   fonts: {
     body: 'inherit',

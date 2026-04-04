@@ -56,6 +56,12 @@ export interface AuxosTheme {
     assistantBubbleText: string
     inputBackground: string
     inputBorder: string
+    /** Glassmorphism panel background */
+    glassBg: string
+    /** Glassmorphism surface tint */
+    glassSurface: string
+    /** Glass border color */
+    glassBorder: string
   }
   fonts: {
     body: string
@@ -99,6 +105,14 @@ export interface AuxosConfig {
   onEvent?: (event: AuxosEvent) => void
   /** Max tool execution iterations before stopping. Defaults to 10. */
   maxIterations?: number
+  /** Whether the user is currently idle (triggers orb alert state). */
+  isIdle?: boolean
+  /** Contextual message to show in the speech bubble when idle. */
+  idleMessage?: string
+  /** Called when the user dismisses the idle alert. */
+  onIdleDismiss?: () => void
+  /** Called when the panel opens or closes. */
+  onOpenChange?: (isOpen: boolean) => void
 }
 
 export type AuxosEvent =
