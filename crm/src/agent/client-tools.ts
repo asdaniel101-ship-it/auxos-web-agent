@@ -1,6 +1,6 @@
 'use client'
 
-import { createCrmTools } from './tools'
+import { createCrmTools, validateToolInput } from './tools'
 import { queueVisualAction } from './visual-actions'
 import { useStore } from '@/store'
 import type { AuxosTool } from '@auxos/agent'
@@ -52,6 +52,14 @@ export function getCrmTools(): AuxosTool[] {
   return tools.map((tool): AuxosTool => ({
     ...tool,
     execute: async (input: Record<string, unknown>) => {
+      // Run validation BEFORE the cursor animation for mutation tools.
+      // If invalid (duplicate email, bad data), return error immediately
+      // so the LLM can course-correct without a wasted animation.
+      if (UI_MUTATION_TOOLS.has(tool.name)) {
+        const error = validateToolInput(tool.name, input, () => useStore.getState())
+        if (error) return error
+      }
+
       // Play visual cursor animation (navigate, fill forms, click buttons)
       await queueVisualAction(tool.name, input)
 

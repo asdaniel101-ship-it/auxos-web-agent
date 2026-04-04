@@ -3,6 +3,56 @@ import type { AuxosTool } from '@auxos/agent'
 import type { CrmStore } from '@/store'
 import type { DealStage, ContactStatus, TaskPriority, TaskStatus, ChartType, Report, Settings } from '@/types'
 
+/**
+ * Pre-animation validation for create/mutate tools.
+ * Returns { success: false, error } if invalid, or null if OK.
+ * Does NOT mutate the store — safe to call before cursor animations.
+ */
+export function validateToolInput(
+  toolName: string,
+  input: Record<string, unknown>,
+  getStore: () => CrmStore
+): { success: false; error: string } | null {
+  const store = getStore()
+  switch (toolName) {
+    case 'create_contact': {
+      const email = input.email as string
+      if (!email || !email.includes('@')) {
+        return { success: false, error: `Invalid email "${email}". Please provide a valid email address.` }
+      }
+      const existing = store.contacts.find((c) => c.email.toLowerCase() === email.toLowerCase())
+      if (existing) {
+        return { success: false, error: `A contact with email "${email}" already exists: ${existing.firstName} ${existing.lastName}. Use update_contact to modify them instead.` }
+      }
+      return null
+    }
+    case 'create_company': {
+      const name = input.name as string
+      const existing = store.companies.find((c) => c.name.toLowerCase() === name.toLowerCase())
+      if (existing) {
+        return { success: false, error: `A company named "${existing.name}" already exists (ID: ${existing.id}). Use update_company to modify it instead.` }
+      }
+      return null
+    }
+    case 'create_deal': {
+      const value = input.value as number
+      if (value <= 0) {
+        return { success: false, error: `Deal value must be greater than 0. Got: ${value}` }
+      }
+      return null
+    }
+    case 'create_task': {
+      const name = (input.name as string).trim()
+      if (!name) {
+        return { success: false, error: 'Task name cannot be empty.' }
+      }
+      return null
+    }
+    default:
+      return null
+  }
+}
+
 export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
   return [
     // ─── Navigation ───
