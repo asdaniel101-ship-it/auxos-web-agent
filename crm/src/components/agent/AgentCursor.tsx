@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useAgentUIStore } from '@/store/agent-ui'
 
 interface CursorPosition {
   x: number
@@ -25,7 +26,7 @@ type QueueItem = {
 /** Minimum move duration so very short moves don't look instant */
 const MIN_MOVE_MS = 200
 /** Constant speed: pixels per second */
-const MOVE_PX_PER_SEC = 400
+const MOVE_PX_PER_SEC = 1600
 
 let aborted = false
 
@@ -139,6 +140,8 @@ export function AgentCursor() {
             if (!step.selector) break
             const el = await waitForElement(step.selector, 2500)
             if (!el || aborted) break
+            const clickLabel = getClickLabel(el)
+            if (clickLabel) useAgentUIStore.getState().setCurrentAction(clickLabel)
             // Skip scroll for elements inside portals/dropdowns
             const inPortal = el.closest('[data-radix-popper-content-wrapper]') || el.closest('[role="listbox"]')
             if (!inPortal) {
@@ -182,6 +185,7 @@ export function AgentCursor() {
             if (!step.selector || !step.text) break
             const el = await waitForElement(step.selector, 3000) as HTMLInputElement | HTMLTextAreaElement | null
             if (!el || aborted) break
+            useAgentUIStore.getState().setCurrentAction(getTypeLabel(el))
             el.scrollIntoView({ behavior: 'smooth', block: 'center' })
             await sleep(200)
             const rect = el.getBoundingClientRect()
@@ -197,32 +201,24 @@ export function AgentCursor() {
             el.click()
             await sleep(180)
             if (aborted) break
-            // Type character by character
+            // Paste the full value at once
             const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
             const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
-            let currentValue = el.value || ''
-            for (let i = 0; i < step.text.length; i++) {
-              const char = step.text[i]
-              currentValue += char
-              if (nativeSetter) {
-                nativeSetter.call(el, currentValue)
-              } else {
-                el.value = currentValue
-              }
-              el.dispatchEvent(new Event('input', { bubbles: true }))
-              const isSpace = char === ' '
-              const baseDelay = isSpace ? 60 : 35
-              const jitter = Math.random() * 40
-              await sleep(baseDelay + jitter)
+            const newValue = (el.value || '') + step.text
+            if (nativeSetter) {
+              nativeSetter.call(el, newValue)
+            } else {
+              el.value = newValue
             }
-            await sleep(200)
+            el.dispatchEvent(new Event('input', { bubbles: true }))
+            el.dispatchEvent(new Event('change', { bubbles: true }))
+            await sleep(150)
             break
           }
 
           case 'select-option': {
-            // Click a [role="option"] whose text content matches step.text.
-            // Used for Radix Select dropdowns where options can't be targeted by CSS alone.
             if (!step.text) break
+            useAgentUIStore.getState().setCurrentAction(`Selecting ${step.text}`)
             const option = await waitForElementByText('[role="option"]', step.text, 3000)
             if (!option || aborted) break
             const inPortal = option.closest('[data-radix-popper-content-wrapper]') || option.closest('[role="listbox"]')
@@ -296,31 +292,49 @@ export function AgentCursor() {
     return () => window.removeEventListener('agent-steps-queued', handler)
   }, [processQueue])
 
+  const executing = useAgentUIStore((s) => s.executing)
+
+  const cursor = executing
+    ? { size: 18, left: pos.x - 9, top: pos.y - 9, rippleOffset: '1px', filter: 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' }
+    : { size: 28, left: pos.x - 4, top: pos.y - 2, rippleOffset: '6px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }
+
   return (
     <div
       style={{
         position: 'fixed',
-        left: pos.x - 4,
-        top: pos.y - 2,
-        width: '28px',
-        height: '28px',
+        left: cursor.left,
+        top: cursor.top,
+        width: `${cursor.size}px`,
+        height: `${cursor.size}px`,
         pointerEvents: 'none',
         zIndex: 99999,
         transition: `left ${pos.moveDuration}ms cubic-bezier(0.4, 0, 0.2, 1), top ${pos.moveDuration}ms cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s, opacity 0.35s`,
         transform: pos.clicking ? 'scale(0.75)' : 'scale(1)',
         opacity: pos.visible ? 1 : 0,
-        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+        filter: cursor.filter,
       }}
     >
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M5 3L19 12L12 13L9 20L5 3Z"
-          fill="#6366f1"
-          stroke="#ffffff"
-          strokeWidth="2"
-          strokeLinejoin="round"
+      {executing ? (
+        <div
+          style={{
+            width: `${cursor.size}px`,
+            height: `${cursor.size}px`,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 35% 35%, #a5b4fc, #6366f1, #4338ca)',
+            boxShadow: '0 0 12px rgba(99, 102, 241, 0.4)',
+          }}
         />
-      </svg>
+      ) : (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M5 3L19 12L12 13L9 20L5 3Z"
+            fill="#6366f1"
+            stroke="#ffffff"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
       {pos.clicking && (
         <>
           <div
@@ -333,8 +347,8 @@ export function AgentCursor() {
               width: '16px',
               height: '16px',
               opacity: 0.8,
-              left: '6px',
-              top: '4px',
+              left: cursor.rippleOffset,
+              top: executing ? cursor.rippleOffset : '4px',
             }}
           />
           <div
@@ -347,14 +361,35 @@ export function AgentCursor() {
               width: '16px',
               height: '16px',
               opacity: 0.3,
-              left: '6px',
-              top: '4px',
+              left: cursor.rippleOffset,
+              top: executing ? cursor.rippleOffset : '4px',
             }}
           />
         </>
       )}
     </div>
   )
+}
+
+/** Derive a human-readable label from a clicked element's aria-label or text. */
+function getClickLabel(el: Element): string | null {
+  const ariaLabel = el.getAttribute('aria-label')
+  if (ariaLabel) return ariaLabel
+  const text = el.textContent?.trim()
+  if (text && text.length < 40) return text
+  return null
+}
+
+/** Derive a label for a text input from its aria-label, associated <label>, or placeholder. */
+function getTypeLabel(el: HTMLInputElement | HTMLTextAreaElement): string {
+  const ariaLabel = el.getAttribute('aria-label')
+  if (ariaLabel) return `Entering ${ariaLabel.toLowerCase()}`
+  if (el.id) {
+    const label = document.querySelector(`label[for="${el.id}"]`)
+    if (label?.textContent) return `Entering ${label.textContent.trim().toLowerCase()}`
+  }
+  if (el.placeholder) return `Entering ${el.placeholder.toLowerCase()}`
+  return 'Entering text'
 }
 
 function sleep(ms: number): Promise<void> {

@@ -113,6 +113,8 @@ export interface AuxosConfig {
   onIdleDismiss?: () => void
   /** Called when the panel opens or closes. */
   onOpenChange?: (isOpen: boolean) => void
+  /** When true, hides the panel and entry point (orb/button) without interrupting the agent loop. */
+  minimized?: boolean
 }
 
 export type AuxosEvent =

@@ -7,6 +7,7 @@ import { useStore } from '@/store'
 import { getCrmTools } from '@/agent/client-tools'
 import { useIdleDetection } from '@/hooks/useIdleDetection'
 import { cancelAllSteps } from '@/components/agent/AgentCursor'
+import { useAgentUIStore, getToolLabel } from '@/store/agent-ui'
 import type { AuxosEvent } from '@auxos/agent'
 import type { CrmStore } from '@/store'
 
@@ -96,9 +97,25 @@ export function AgentWrapper() {
     enabled: !panelOpen,
   })
 
+  const executing = useAgentUIStore((s) => s.executing)
+
   const handleEvent = useCallback((event: AuxosEvent) => {
-    if (event.type === 'stopped') {
-      cancelAllSteps()
+    const { executing: isExec, startExecution, setCurrentAction, finishExecution } = useAgentUIStore.getState()
+    switch (event.type) {
+      case 'tool_start':
+        if (!isExec) startExecution()
+        setCurrentAction(getToolLabel(event.toolName, event.input))
+        break
+      case 'response_end':
+        if (isExec) finishExecution()
+        break
+      case 'stopped':
+        cancelAllSteps()
+        if (isExec) finishExecution()
+        break
+      case 'error':
+        if (isExec) finishExecution()
+        break
     }
   }, [])
 
@@ -153,6 +170,7 @@ export function AgentWrapper() {
       idleMessage={idleMessage}
       onIdleDismiss={dismiss}
       onOpenChange={setPanelOpen}
+      minimized={executing}
     />
   )
 }

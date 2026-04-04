@@ -6,6 +6,7 @@ import { StoreInitializer } from '@/components/StoreInitializer'
 import { Toaster } from '@/components/ui/toaster'
 import { AgentWrapper } from '@/components/agent/AgentWrapper'
 import { AgentCursor } from '@/components/agent/AgentCursor'
+import { ActionBubble } from '@/components/agent/ActionBubble'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Toaster />
           <AgentWrapper />
           <AgentCursor />
+          <ActionBubble />
         </StoreInitializer>
       </body>
     </html>

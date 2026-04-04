@@ -75,10 +75,12 @@ export function AuxosAgent(config: AuxosConfig) {
     }
   }, [isOpen, isIdle, idleMessage, openWithIdleMessage, updateOpen])
 
+  const minimized = config.minimized ?? false
+
   return (
     <>
       {/* Entry point: SiriOrb (CRM) or AgentButton (SolaGlow fallback) */}
-      {!isOpen && (
+      {!isOpen && !minimized && (
         useOrbMode ? (
           <div
             data-auxos-orb
@@ -132,7 +134,7 @@ export function AuxosAgent(config: AuxosConfig) {
       )}
 
       <AgentPanel
-        isOpen={isOpen}
+        isOpen={isOpen && !minimized}
         onClose={() => updateOpen(false)}
         messages={messages}
         isLoading={isLoading}
