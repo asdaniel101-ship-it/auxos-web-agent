@@ -15,7 +15,7 @@ export function AuxosAgent(config: AuxosConfig) {
   const [isOrbHovered, setIsOrbHovered] = useState(false)
   const theme = useMemo(() => createTheme(config.theme || {}), [config.theme])
 
-  const { messages, isLoading, streamingText, send } = useAgent({
+  const { messages, isLoading, streamingText, send, stop } = useAgent({
     tools: config.tools,
     endpoint: config.endpoint,
     getContext: config.getContext,
@@ -138,6 +138,7 @@ export function AuxosAgent(config: AuxosConfig) {
         isLoading={isLoading}
         streamingText={streamingText}
         onSend={send}
+        onStop={stop}
         name={config.name}
         tagline={config.tagline}
         suggestions={config.suggestions}
