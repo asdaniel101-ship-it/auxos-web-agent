@@ -856,6 +856,41 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
     }),
 
     custom({
+      name: 'draft_email',
+      description: 'Open the email compose form pre-filled with the given values. Does NOT send the email — lets the user review and edit first. Use this when the user asks to "send an email" or "write an email" to someone from a deal context.',
+      parameters: {
+        type: 'object',
+        properties: {
+          to: { type: 'string', description: 'Recipient email address' },
+          subject: { type: 'string', description: 'Email subject line' },
+          body: { type: 'string', description: 'Email body text' },
+          linkedContactId: { type: 'string', description: 'Contact ID to link' },
+          linkedDealId: { type: 'string', description: 'Deal ID to link' },
+        },
+        required: ['to', 'subject', 'body'],
+      },
+      execute: (input) => {
+        const store = getStore()
+        store.setEmailDraft({
+          to: input.to as string,
+          subject: input.subject as string,
+          body: input.body as string,
+          linkedContactId: (input.linkedContactId as string) || '',
+          linkedDealId: (input.linkedDealId as string) || '',
+        })
+        return {
+          success: true,
+          data: {
+            navigate: '/emails',
+            drafted: true,
+            to: input.to,
+            subject: input.subject,
+          },
+        }
+      },
+    }),
+
+    custom({
       name: 'reply_to_email',
       description: 'Reply to an existing email thread',
       parameters: {
