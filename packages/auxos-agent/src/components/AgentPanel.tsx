@@ -279,7 +279,7 @@ export function AgentPanel({
 
             {isLoading ? (
               <button
-                onClick={onStop}
+                onClick={() => onStop?.()}
                 aria-label="Stop agent"
                 style={{
                   flexShrink: 0,
