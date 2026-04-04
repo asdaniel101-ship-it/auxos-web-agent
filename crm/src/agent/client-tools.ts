@@ -2,6 +2,7 @@
 
 import { createCrmTools, validateToolInput } from './tools'
 import { queueVisualAction } from './visual-actions'
+import { queueVisualActionFromConfig } from './tools-loader'
 import { useStore } from '@/store'
 import type { AuxosTool } from '@auxos/agent'
 
@@ -52,8 +53,13 @@ export function getCrmTools(): AuxosTool[] {
         if (error) return error
       }
 
-      // Play visual cursor animation (navigate, fill forms, click buttons)
-      await queueVisualAction(tool.name, input)
+      // Play visual cursor animation — try JSON config first, fall back to hardcoded
+      const configAction = queueVisualActionFromConfig(tool.name, input)
+      if (configAction) {
+        await configAction
+      } else {
+        await queueVisualAction(tool.name, input)
+      }
 
       if (UI_MUTATION_TOOLS.has(tool.name)) {
         // Verify the UI mutation succeeded: if a dialog is still open,
