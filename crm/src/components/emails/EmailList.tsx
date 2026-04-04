@@ -78,6 +78,7 @@ export function EmailList({ threads, selectedId, onSelect }: EmailListProps) {
                   key={thread.id}
                   role="option"
                   aria-selected={isSelected}
+                  data-thread-id={thread.id}
                   onClick={() => onSelect(thread.id)}
                   className={cn(
                     'flex flex-col gap-0.5 px-4 py-3 cursor-pointer border-b border-slate-100 transition-colors',

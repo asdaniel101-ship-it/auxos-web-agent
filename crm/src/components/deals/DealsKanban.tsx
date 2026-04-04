@@ -89,6 +89,7 @@ function DealCard({ deal, companyName, isGlobalDragging }: DealCardProps) {
         isDragging && 'opacity-30'
       )}
       onClick={handleClick}
+      data-deal-id={deal.id}
       aria-label={`Deal: ${deal.name}`}
     >
       <div className="flex items-start justify-between gap-2">

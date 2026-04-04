@@ -5,27 +5,35 @@ import { queueVisualAction } from './visual-actions'
 import { useStore } from '@/store'
 import type { AuxosTool } from '@auxos/agent'
 
-// Mutation tools: the cursor fills out forms and clicks submit buttons in the UI.
-// The UI handles the state mutation, so we do NOT call tool.execute() for these.
-const MUTATION_TOOLS = new Set([
+// Tools with COMPLETE cursor-driven UI flows (form fill + submit click).
+// These skip tool.execute() because the cursor's UI interactions ARE the mutation.
+const UI_MUTATION_TOOLS = new Set([
   'create_contact',
-  'update_contact',
-  'delete_contact',
-  'bulk_update_contacts',
   'create_company',
-  'update_company',
   'create_deal',
-  'update_deal',
-  'move_deal_stage',
   'create_task',
-  'update_task',
-  'complete_task',
   'send_email',
-  'reply_to_email',
   'draft_email',
+  'update_contact',
+  'update_company',
+  'update_deal',
+  'delete_contact',
+  'delete_company',
+  'complete_task',
+  'move_deal_stage',
+  'reply_to_email',
   'update_settings',
   'invite_team_member',
   'onboard_client',
+])
+
+// Tools with cursor animation but NO complete UI submit flow.
+// Animation plays for visual effect, then tool.execute() does the actual mutation.
+// These exist because the CRM has no edit/delete UI for these entities.
+const ANIMATED_WITH_FALLBACK = new Set([
+  'update_task',       // no edit form, only checkbox toggle
+  'bulk_update_contacts', // no bulk UI
+  'generate_report',   // no generation UI
 ])
 
 /**
@@ -47,11 +55,21 @@ export function getCrmTools(): AuxosTool[] {
       // Play visual cursor animation (navigate, fill forms, click buttons)
       await queueVisualAction(tool.name, input)
 
-      if (MUTATION_TOOLS.has(tool.name)) {
-        // Mutation was performed by the cursor clicking the UI.
-        // Return a success indicator so the LLM knows it worked.
+      if (UI_MUTATION_TOOLS.has(tool.name)) {
+        // Verify the UI mutation succeeded: if a dialog is still open,
+        // the cursor missed the submit button. Fall back to tool.execute().
+        const dialogStillOpen = typeof document !== 'undefined' &&
+          document.querySelector('[role="dialog"]') !== null
+        if (dialogStillOpen) {
+          // Close the stuck dialog, then execute the tool directly
+          document.querySelector<HTMLElement>('[role="dialog"] button[aria-label="Close"]')?.click()
+          return tool.execute(input)
+        }
         return { success: true, performedViaUI: true }
       }
+
+      // ANIMATED_WITH_FALLBACK: cursor played the animation, now execute the actual mutation
+      // (these tools don't have complete UI flows yet)
 
       // Read-only tools still need to execute to return data to the LLM
       return tool.execute(input)
