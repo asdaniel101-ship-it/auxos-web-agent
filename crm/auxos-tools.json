@@ -1,0 +1,663 @@
+{
+  "version": "1.0",
+  "generatedAt": "2026-04-04T23:24:11.570Z",
+  "source": {
+    "types": "/Users/kerry/Downloads/auxos-web-agent/crm/src/types/index.ts",
+    "store": "/Users/kerry/Downloads/auxos-web-agent/crm/src/store/slices",
+    "forms": "/Users/kerry/Downloads/auxos-web-agent/crm/src/components"
+  },
+  "tools": [
+    {
+      "name": "list_activity",
+      "description": "List all activity",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "create_company",
+      "description": "Create a new company",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "website": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "revenue"
+        ]
+      },
+      "ui": {
+        "page": "/companies",
+        "trigger": "button:Add Company",
+        "fields": {},
+        "submit": null
+      }
+    },
+    {
+      "name": "update_company",
+      "description": "Update an existing company",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Company ID"
+          },
+          "name": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "website": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "delete_company",
+      "description": "Delete a company",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Company ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_companies",
+      "description": "List all companies",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "create_contact",
+      "description": "Create a new contact",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "First name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number"
+          },
+          "companyId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "lead",
+              "prospect",
+              "customer",
+              "churned"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "description": "Job title"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Contact notes"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email"
+        ]
+      },
+      "ui": {
+        "page": "/contacts",
+        "trigger": "button:Add Contact",
+        "fields": {
+          "firstName": "#cf-firstName",
+          "lastName": "#cf-lastName",
+          "email": "#cf-email",
+          "phone": "#cf-phone",
+          "title": "#cf-title",
+          "notes": "#cf-notes"
+        },
+        "submit": "Submit contact form"
+      }
+    },
+    {
+      "name": "update_contact",
+      "description": "Update an existing contact",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Contact ID"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "lead",
+              "prospect",
+              "customer",
+              "churned"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "delete_contact",
+      "description": "Delete a contact",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Contact ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_contacts",
+      "description": "List all contacts",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "create_deal",
+      "description": "Create a new deal",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string"
+          },
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "value": {
+            "type": "number"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "Prospecting",
+              "Qualification",
+              "Proposal",
+              "Negotiation",
+              "Closed Won",
+              "Closed Lost"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "closeDate": {
+            "type": "string"
+          },
+          "probability": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "contactIds",
+          "value"
+        ]
+      },
+      "ui": {
+        "page": "/deals",
+        "trigger": "button:Add Deal",
+        "fields": {},
+        "submit": null
+      }
+    },
+    {
+      "name": "update_deal",
+      "description": "Update an existing deal",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Deal ID"
+          },
+          "name": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string"
+          },
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "value": {
+            "type": "number"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "Prospecting",
+              "Qualification",
+              "Proposal",
+              "Negotiation",
+              "Closed Won",
+              "Closed Lost"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "closeDate": {
+            "type": "string"
+          },
+          "probability": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "delete_deal",
+      "description": "Delete a deal",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Deal ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_deals",
+      "description": "List all deals",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "create_emailthread",
+      "description": "Create a new emailthread",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": null
+            }
+          },
+          "linkedContactId": {
+            "type": "string"
+          },
+          "linkedDealId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "participants",
+          "messages"
+        ]
+      },
+      "ui": null
+    },
+    {
+      "name": "create_report",
+      "description": "Create a new report",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "revenue-by-month",
+              "deals-by-stage",
+              "contacts-by-source",
+              "tasks-by-owner",
+              "pipeline-forecast",
+              "custom"
+            ]
+          },
+          "chartType": {
+            "type": "string",
+            "enum": [
+              "bar",
+              "line",
+              "pie"
+            ]
+          },
+          "end": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "end"
+        ]
+      },
+      "ui": null
+    },
+    {
+      "name": "delete_report",
+      "description": "Delete a report",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Report ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_reports",
+      "description": "List all reports",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "update_settings",
+      "description": "Update an existing settings",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Settings ID"
+          },
+          "email": {
+            "type": "boolean"
+          },
+          "inApp": {
+            "type": "boolean"
+          },
+          "dailyDigest": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_settings",
+      "description": "List all settings",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "create_task",
+      "description": "Create a new task",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "in-progress",
+              "done"
+            ]
+          },
+          "linkedDealId": {
+            "type": "string"
+          },
+          "linkedContactId": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "assignee"
+        ]
+      },
+      "ui": {
+        "page": "/tasks",
+        "trigger": "button:Add Task",
+        "fields": {},
+        "submit": null
+      }
+    },
+    {
+      "name": "update_task",
+      "description": "Update an existing task",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID"
+          },
+          "name": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "in-progress",
+              "done"
+            ]
+          },
+          "linkedDealId": {
+            "type": "string"
+          },
+          "linkedContactId": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "delete_task",
+      "description": "Delete a task",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "list_tasks",
+      "description": "List all tasks",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  ]
+}
