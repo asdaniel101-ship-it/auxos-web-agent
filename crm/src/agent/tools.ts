@@ -145,6 +145,14 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
       },
       execute: (input) => {
         const store = getStore()
+        const email = input.email as string
+        if (!email || !email.includes('@')) {
+          return { success: false, error: `Invalid email "${email}". Please provide a valid email address.` }
+        }
+        const existingContact = store.contacts.find((c) => c.email.toLowerCase() === email.toLowerCase())
+        if (existingContact) {
+          return { success: false, error: `A contact with email "${email}" already exists: ${existingContact.firstName} ${existingContact.lastName}. Use update_contact to modify them instead.` }
+        }
         let companyId = (input.companyId as string) || null
         if (!companyId && input.companyName) {
           const name = (input.companyName as string).toLowerCase()
@@ -358,8 +366,13 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
       },
       execute: (input) => {
         const store = getStore()
+        const companyName = input.name as string
+        const existingCompany = store.companies.find((c) => c.name.toLowerCase() === companyName.toLowerCase())
+        if (existingCompany) {
+          return { success: false, error: `A company named "${existingCompany.name}" already exists (ID: ${existingCompany.id}). Use update_company to modify it instead.` }
+        }
         const company = store.addCompany({
-          name: input.name as string,
+          name: companyName,
           industry: (input.industry as string) || '',
           size: (input.size as string) || '',
           revenue: 0,
@@ -510,6 +523,10 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
       },
       execute: (input) => {
         const store = getStore()
+        const dealValue = input.value as number
+        if (dealValue <= 0) {
+          return { success: false, error: `Deal value must be greater than 0. Got: ${dealValue}` }
+        }
         let companyId = (input.companyId as string) || null
         if (!companyId && input.companyName) {
           const name = (input.companyName as string).toLowerCase()
@@ -687,8 +704,12 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
       },
       execute: (input) => {
         const store = getStore()
+        const taskName = (input.name as string).trim()
+        if (!taskName) {
+          return { success: false, error: 'Task name cannot be empty.' }
+        }
         const task = store.addTask({
-          name: input.name as string,
+          name: taskName,
           assignee: input.assignee as string,
           priority: (input.priority as TaskPriority) || 'medium',
           status: 'todo' as TaskStatus,
