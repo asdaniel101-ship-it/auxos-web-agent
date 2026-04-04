@@ -23,6 +23,7 @@ interface UseAgentReturn {
   isLoading: boolean
   streamingText: string
   send: (text: string) => Promise<void>
+  stop: () => void
   reset: () => void
 }
 
@@ -46,6 +47,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [streamingText, setStreamingText] = useState('')
   const claudeMessagesRef = useRef<ClaudeMessage[]>([])
+  const abortRef = useRef<AbortController | null>(null)
 
   const toolMap = useRef<Map<string, AuxosTool['execute']>>(new Map())
   toolMap.current = new Map(tools.map((t) => [t.name, t.execute]))
@@ -67,13 +69,25 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
     [onEvent]
   )
 
+  const stop = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+    }
+  }, [])
+
   async function fetchWithRetry(
     url: string,
     init: RequestInit,
-    retries = MAX_RETRIES
+    retries = MAX_RETRIES,
+    signal?: AbortSignal
   ): Promise<Response> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+
+    // If external signal aborts, also abort this fetch
+    const onExternalAbort = () => controller.abort()
+    signal?.addEventListener('abort', onExternalAbort)
 
     try {
       const response = await fetch(url, { ...init, signal: controller.signal })
@@ -83,24 +97,25 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           const delay = RETRY_DELAYS[MAX_RETRIES - retries] || 3000
           emit({ type: 'error', error: `Retrying (${response.status})...`, retryable: true })
           await new Promise((r) => setTimeout(r, delay))
-          return fetchWithRetry(url, init, retries - 1)
+          return fetchWithRetry(url, init, retries - 1, signal)
         }
       }
 
       return response
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        throw new Error('Request timed out. Please try again.')
+        throw new DOMException('Aborted', 'AbortError')
       }
       if (retries > 0) {
         const delay = RETRY_DELAYS[MAX_RETRIES - retries] || 3000
         emit({ type: 'error', error: 'Network error, retrying...', retryable: true })
         await new Promise((r) => setTimeout(r, delay))
-        return fetchWithRetry(url, init, retries - 1)
+        return fetchWithRetry(url, init, retries - 1, signal)
       }
       throw err
     } finally {
       clearTimeout(timeout)
+      signal?.removeEventListener('abort', onExternalAbort)
     }
   }
 
@@ -224,9 +239,14 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
         let toolMessages: DisplayMessage[] = []
         let iterations = 0
 
+        const controller = new AbortController()
+        abortRef.current = controller
+        const signal = controller.signal
+
         // Tool execution loop with max iterations guard
         while (iterations < maxIterations) {
           iterations++
+          if (signal.aborted) break
           const context = getContext?.() || {}
 
           emit({ type: 'response_start' })
@@ -241,7 +261,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
               systemPrompt,
               stream: true,
             }),
-          })
+          }, MAX_RETRIES, signal)
 
           if (!response.ok) {
             const errorBody = await response.json().catch(() => ({ error: `HTTP ${response.status}` }))
@@ -289,6 +309,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           // Execute tools and build visibility messages
           const toolResults: any[] = []
           for (const toolUse of toolUseBlocks) {
+            if (signal.aborted) break
             const executeFn = toolMap.current.get(toolUse.name)
             let result: ToolResult
 
@@ -356,6 +377,17 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           { type: 'assistant', content: finalText || 'Done!' },
         ])
       } catch (error: any) {
+        if (error.name === 'AbortError') {
+          emit({ type: 'stopped' })
+          // Append stopped message
+          setDisplayMessages([
+            ...newDisplay,
+            ...toolMessages,
+            { type: 'assistant', content: finalText ? finalText + '\n\n(Stopped)' : '(Stopped)' },
+          ])
+          claudeMessagesRef.current = currentMessages
+          return
+        }
         emit({ type: 'error', error: error.message, retryable: false })
         setDisplayMessages([
           ...newDisplay,
@@ -365,6 +397,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           },
         ])
       } finally {
+        abortRef.current = null
         setIsLoading(false)
         setStreamingText('')
       }
@@ -378,5 +411,5 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
     claudeMessagesRef.current = []
   }, [])
 
-  return { messages: displayMessages, isLoading, streamingText, send, reset }
+  return { messages: displayMessages, isLoading, streamingText, send, stop, reset }
 }

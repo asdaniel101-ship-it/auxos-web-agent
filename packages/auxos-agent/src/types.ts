@@ -123,6 +123,7 @@ export type AuxosEvent =
   | { type: 'tool_end'; toolName: string; result: ToolResult }
   | { type: 'response_end' }
   | { type: 'error'; error: string; retryable: boolean }
+  | { type: 'stopped' }
 
 /** Server-side API handler configuration. */
 export interface ApiHandlerConfig {
