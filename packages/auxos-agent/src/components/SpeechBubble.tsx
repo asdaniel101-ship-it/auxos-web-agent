@@ -1,5 +1,7 @@
 'use client'
 
+import type { AuxosTheme } from '../types'
+
 const keyframes = `
 @keyframes auxos-bubble-fade-in {
   from { opacity: 0; transform: translateX(10px); }
@@ -11,9 +13,10 @@ interface SpeechBubbleProps {
   message: string
   visible: boolean
   onClick: () => void
+  theme: AuxosTheme
 }
 
-export function SpeechBubble({ message, visible, onClick }: SpeechBubbleProps) {
+export function SpeechBubble({ message, visible, onClick, theme }: SpeechBubbleProps) {
   if (!visible) return null
 
   return (
@@ -27,14 +30,14 @@ export function SpeechBubble({ message, visible, onClick }: SpeechBubbleProps) {
           top: '50%',
           transform: 'translateY(-50%)',
           marginRight: '12px',
-          background: 'rgba(30, 32, 48, 0.8)',
+          background: theme.colors.glassBg,
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: `1px solid ${theme.colors.glassBorder}`,
           borderRadius: '12px',
           padding: '10px 16px',
           fontSize: '13px',
-          color: '#cbd5e1',
+          color: theme.colors.textSecondary,
           whiteSpace: 'nowrap',
           cursor: 'pointer',
           animation: 'auxos-bubble-fade-in 0.5s ease forwards',
@@ -52,9 +55,9 @@ export function SpeechBubble({ message, visible, onClick }: SpeechBubbleProps) {
             transform: 'translateY(-50%) rotate(45deg)',
             width: '10px',
             height: '10px',
-            background: 'rgba(30, 32, 48, 0.8)',
-            borderRight: '1px solid rgba(255,255,255,0.1)',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
+            background: theme.colors.glassBg,
+            borderRight: `1px solid ${theme.colors.glassBorder}`,
+            borderTop: `1px solid ${theme.colors.glassBorder}`,
           }}
         />
       </button>

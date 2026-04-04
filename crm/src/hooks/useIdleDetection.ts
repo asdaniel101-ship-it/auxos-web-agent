@@ -48,6 +48,7 @@ export function useIdleDetection({
   const pathname = usePathname()
   const [isIdle, setIsIdle] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cooldownRef = useRef(false)
 
   const resetTimer = useCallback(() => {
@@ -70,7 +71,7 @@ export function useIdleDetection({
 
     // Start cooldown
     cooldownRef.current = true
-    setTimeout(() => {
+    cooldownTimerRef.current = setTimeout(() => {
       cooldownRef.current = false
       // Reset timer after cooldown ends
       resetTimer()
@@ -97,6 +98,7 @@ export function useIdleDetection({
     return () => {
       events.forEach((evt) => window.removeEventListener(evt, handler))
       if (timerRef.current) clearTimeout(timerRef.current)
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
     }
   }, [enabled, resetTimer])
 
@@ -104,6 +106,7 @@ export function useIdleDetection({
   useEffect(() => {
     setIsIdle(false)
     if (timerRef.current) clearTimeout(timerRef.current)
+    if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
     if (!cooldownRef.current && enabled) {
       timerRef.current = setTimeout(() => setIsIdle(true), timeout)
     }

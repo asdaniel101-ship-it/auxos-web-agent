@@ -97,6 +97,7 @@ export function AuxosAgent(config: AuxosConfig) {
               message={idleMessage}
               visible={isIdle}
               onClick={handleBubbleClick}
+              theme={theme}
             />
             <SiriOrb state={orbState} onClick={handleOrbClick} />
           </div>

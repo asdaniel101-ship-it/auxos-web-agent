@@ -31,16 +31,16 @@ export function AgentMessage({ role, content, isStreaming = false, theme }: Agen
           fontFamily: theme.fonts.body,
           ...(isUser
             ? {
-                background: theme.colors.glassSurface,
+                background: theme.colors.userBubble,
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
                 border: `1px solid ${theme.colors.glassBorder}`,
-                color: theme.colors.text,
+                color: theme.colors.userBubbleText,
               }
             : {
-                background: theme.colors.glassSurface,
-                border: `1px solid ${theme.colors.glassBorder}`,
-                color: theme.colors.textSecondary,
+                background: theme.colors.assistantBubble,
+                border: `1px solid ${theme.colors.assistantBubbleBorder}`,
+                color: theme.colors.assistantBubbleText,
               }),
         }}
       >

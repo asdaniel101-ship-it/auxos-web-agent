@@ -92,7 +92,7 @@ export function AgentPanel({
           WebkitBackdropFilter: 'blur(20px)',
           borderRadius: '20px',
           border: `1px solid ${theme.colors.glassBorder}`,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(99,102,241,0.1)',
+          boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 40px ${theme.colors.primaryAlpha}`,
           display: isOpen ? 'flex' : 'none',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -185,8 +185,8 @@ export function AgentPanel({
                         WebkitBackdropFilter: 'blur(8px)',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.12)'
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'
+                        e.currentTarget.style.background = theme.colors.primaryAlpha
+                        e.currentTarget.style.borderColor = theme.colors.primaryLight
                         e.currentTarget.style.color = theme.colors.text
                       }}
                       onMouseLeave={(e) => {
@@ -237,7 +237,7 @@ export function AgentPanel({
               transition: 'border-color 0.15s',
             }}
             onFocus={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(129,140,248,0.4)'
+              e.currentTarget.style.borderColor = theme.colors.primaryLight
             }}
             onBlur={(e) => {
               e.currentTarget.style.borderColor = theme.colors.glassBorder
@@ -292,7 +292,7 @@ export function AgentPanel({
                 cursor: input.trim() && !isLoading ? 'pointer' : 'default',
                 transition: 'all 0.2s',
                 background: input.trim() && !isLoading
-                  ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                  ? `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.primaryDark})`
                   : 'transparent',
                 color: input.trim() && !isLoading ? 'white' : 'transparent',
                 opacity: input.trim() && !isLoading ? 1 : 0,
