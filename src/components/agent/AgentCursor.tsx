@@ -24,11 +24,9 @@ type QueueItem = {
 }
 
 /** Minimum move duration so very short moves don't look instant */
-const MIN_MOVE_MS = 300
-/** Maximum move duration so long-distance moves don't drag */
-const MAX_MOVE_MS = 800
-/** Base speed: pixels per second */
-const MOVE_PX_PER_SEC = 1200
+const MIN_MOVE_MS = 200
+/** Constant speed: pixels per second */
+const MOVE_PX_PER_SEC = 400
 
 // Use a global queue on window to avoid module duplication in Next.js
 function getQueue(): QueueItem[] {
@@ -70,7 +68,7 @@ export function AgentCursor() {
     const dy = toY - fromY
     const dist = Math.sqrt(dx * dx + dy * dy)
     const ms = (dist / MOVE_PX_PER_SEC) * 1000
-    return Math.min(MAX_MOVE_MS, Math.max(MIN_MOVE_MS, ms))
+    return Math.max(MIN_MOVE_MS, ms)
   }
 
   /**
@@ -89,13 +87,11 @@ export function AgentCursor() {
     if (processingRef.current || queue.length === 0) return
     processingRef.current = true
 
-    // Fade in from the chat button position (bottom-right corner)
-    if (lastPosRef.current.x < 0) {
-      const startX = window.innerWidth - 34
-      const startY = window.innerHeight - 34
-      lastPosRef.current = { x: startX, y: startY }
-      setPos((p) => ({ ...p, x: startX, y: startY, moveDuration: 0 }))
-    }
+    // Always start from the chat button position (bottom-right corner)
+    const startX = window.innerWidth - 34
+    const startY = window.innerHeight - 34
+    lastPosRef.current = { x: startX, y: startY }
+    setPos((p) => ({ ...p, x: startX, y: startY, moveDuration: 0 }))
     // Small delay so the opacity transition has a frame to start from
     await sleep(30)
     setPos((p) => ({ ...p, visible: true }))
@@ -170,9 +166,8 @@ export function AgentCursor() {
             el.click()
             await sleep(180)
             // Type character by character with natural rhythm
-            const nativeSetter =
-              Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set ||
-              Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+            const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+            const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
             let currentValue = el.value || ''
             for (let i = 0; i < step.text.length; i++) {
               const char = step.text[i]
