@@ -90,7 +90,7 @@ export function CompaniesTable() {
                 ).length
 
                 return (
-                  <TableRow key={company.id} className="cursor-pointer">
+                  <TableRow key={company.id} data-company-id={company.id} className="cursor-pointer">
                     <TableCell>
                       <Link
                         href={`/companies/${company.id}`}

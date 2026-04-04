@@ -167,6 +167,7 @@ export function DealsList() {
             {filtered.map((deal) => (
               <TableRow
                 key={deal.id}
+                data-deal-id={deal.id}
                 className="cursor-pointer hover:bg-slate-50 transition-colors"
                 onClick={() => router.push(`/deals/${deal.id}`)}
                 aria-label={`View deal ${deal.name}`}

@@ -18,7 +18,6 @@ export interface EmailsSlice {
   emailDraft: EmailDraft | null
   composeOpen: boolean
   setEmailDraft: (draft: EmailDraft) => void
-  clearEmailDraft: () => void
   setComposeOpen: (open: boolean) => void
 }
 
@@ -45,6 +44,5 @@ export const createEmailsSlice: StateCreator<EmailsSlice> = (set) => ({
   emailDraft: null,
   composeOpen: false,
   setEmailDraft: (draft) => set({ emailDraft: draft, composeOpen: true }),
-  clearEmailDraft: () => set({ emailDraft: null }),
-  setComposeOpen: (open) => set({ composeOpen: open, ...(!open ? { emailDraft: null } : {}) }),
+  setComposeOpen: (open) => set(open ? { composeOpen: true } : { composeOpen: false, emailDraft: null }),
 })

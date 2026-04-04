@@ -229,6 +229,7 @@ export function ContactsTable() {
                 return (
                   <TableRow
                     key={contact.id}
+                    data-contact-id={contact.id}
                     data-state={selectedIds.has(contact.id) ? 'selected' : undefined}
                     className="cursor-pointer"
                   >

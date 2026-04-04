@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, KeyboardEvent, useState } from 'react'
-import { X, Send, Square } from 'lucide-react'
+import { X, Send, Square, ChevronRight } from 'lucide-react'
 import { SiriOrb } from './SiriOrb'
 import { AgentMessage } from './AgentMessage'
 import { ToolMessage } from './ToolMessage'
@@ -31,6 +31,65 @@ const panelKeyframes = `
   50% { opacity: 0; }
 }
 `
+
+function CollapsibleReasoning({ content, theme }: { content: string; theme: AuxosTheme }) {
+  const [expanded, setExpanded] = useState(false)
+  const summary = content.split('\n')[0].slice(0, 80) + (content.length > 80 ? '...' : '')
+
+  return (
+    <div
+      style={{
+        marginBottom: '8px',
+        fontSize: '12px',
+        color: theme.colors.textMuted,
+        fontFamily: theme.fonts.body,
+      }}
+    >
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '4px 0',
+          color: theme.colors.textMuted,
+          fontSize: '12px',
+          fontFamily: theme.fonts.body,
+          width: '100%',
+          textAlign: 'left',
+        }}
+      >
+        <ChevronRight
+          style={{
+            height: '12px',
+            width: '12px',
+            flexShrink: 0,
+            transition: 'transform 0.15s',
+            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}
+        />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {summary}
+        </span>
+      </button>
+      {expanded && (
+        <div
+          style={{
+            padding: '6px 10px 6px 20px',
+            color: theme.colors.textSecondary,
+            lineHeight: 1.5,
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          {content}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function AgentPanel({
   isOpen,
@@ -205,13 +264,20 @@ export function AgentPanel({
             </div>
           ) : (
             <div>
-              {messages.map((msg, i) =>
-                msg.type === 'tool' ? (
-                  <ToolMessage key={i} toolName={msg.toolName} result={msg.result} theme={theme} />
-                ) : (
-                  <AgentMessage key={i} role={msg.type} content={msg.content} theme={theme} />
-                )
-              )}
+              {messages.map((msg, i) => {
+                if (msg.type === 'tool') {
+                  return <ToolMessage key={i} toolName={msg.toolName} result={msg.result} theme={theme} />
+                }
+                // Intermediate assistant reasoning: followed by a tool message
+                const isIntermediate =
+                  msg.type === 'assistant' &&
+                  i < messages.length - 1 &&
+                  messages[i + 1].type === 'tool'
+                if (isIntermediate) {
+                  return <CollapsibleReasoning key={i} content={msg.content} theme={theme} />
+                }
+                return <AgentMessage key={i} role={msg.type} content={msg.content} theme={theme} />
+              })}
               {streamingText && (
                 <AgentMessage role="assistant" content={streamingText} isStreaming theme={theme} />
               )}

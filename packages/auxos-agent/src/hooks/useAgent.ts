@@ -361,6 +361,11 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
             })
           }
 
+          // Preserve intermediate reasoning text before tool calls
+          if (textContent.trim()) {
+            toolMessages.push({ type: 'assistant', content: textContent })
+          }
+
           // Update display with tool messages as they happen
           setDisplayMessages([...newDisplay, ...toolMessages])
 
