@@ -22,7 +22,6 @@ type QueueItem = {
 }
 
 const queue: QueueItem[] = []
-let isProcessing = false
 let aborted = false
 
 /**
