@@ -15,7 +15,7 @@ export function AgentWrapper() {
   const tools = useMemo(() => getCrmTools(), [])
 
   const { isIdle, idleMessage, dismiss } = useIdleDetection({
-    timeout: 30000,
+    timeout: 10000,
     cooldown: 300000,
     enabled: !panelOpen,
   })
@@ -40,26 +40,26 @@ export function AgentWrapper() {
       })}
       theme={{
         colors: {
-          primary: '#818cf8',
-          primaryDark: '#6366f1',
-          primaryLight: 'rgba(129, 140, 248, 0.15)',
-          primaryAlpha: 'rgba(129, 140, 248, 0.08)',
-          background: 'rgba(15, 17, 23, 0.7)',
-          surface: 'rgba(255, 255, 255, 0.06)',
-          surfaceBorder: 'rgba(255, 255, 255, 0.1)',
-          text: '#e2e8f0',
-          textSecondary: '#cbd5e1',
+          primary: '#0052D4',
+          primaryDark: '#0043AE',
+          primaryLight: 'rgba(0, 82, 212, 0.1)',
+          primaryAlpha: 'rgba(0, 82, 212, 0.05)',
+          background: 'rgba(255, 255, 255, 0.85)',
+          surface: 'rgba(0, 0, 0, 0.03)',
+          surfaceBorder: 'rgba(0, 0, 0, 0.08)',
+          text: '#1e293b',
+          textSecondary: '#475569',
           textMuted: '#94a3b8',
-          userBubble: 'rgba(255, 255, 255, 0.1)',
-          userBubbleText: '#e2e8f0',
-          assistantBubble: 'rgba(255, 255, 255, 0.05)',
-          assistantBubbleBorder: 'rgba(255, 255, 255, 0.06)',
-          assistantBubbleText: '#cbd5e1',
-          inputBackground: 'rgba(255, 255, 255, 0.08)',
-          inputBorder: 'rgba(255, 255, 255, 0.1)',
-          glassBg: 'rgba(15, 17, 23, 0.7)',
-          glassSurface: 'rgba(255, 255, 255, 0.08)',
-          glassBorder: 'rgba(255, 255, 255, 0.1)',
+          userBubble: '#0052D4',
+          userBubbleText: '#ffffff',
+          assistantBubble: 'rgba(0, 0, 0, 0.04)',
+          assistantBubbleBorder: 'rgba(0, 0, 0, 0.06)',
+          assistantBubbleText: '#334155',
+          inputBackground: 'rgba(0, 0, 0, 0.04)',
+          inputBorder: 'rgba(0, 0, 0, 0.1)',
+          glassBg: 'rgba(255, 255, 255, 0.85)',
+          glassSurface: 'rgba(0, 0, 0, 0.04)',
+          glassBorder: 'rgba(0, 0, 0, 0.08)',
         },
       }}
       isIdle={isIdle}

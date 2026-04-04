@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 
 interface UseIdleDetectionOptions {
-  /** Idle timeout in ms. Default 30000 (30s). */
+  /** Idle timeout in ms. Default 10000 (10s). */
   timeout?: number
   /** Cooldown after dismiss in ms. Default 300000 (5 min). */
   cooldown?: number
@@ -41,7 +41,7 @@ function getMessageForRoute(pathname: string): string {
 }
 
 export function useIdleDetection({
-  timeout = 30000,
+  timeout = 10000,
   cooldown = 300000,
   enabled = true,
 }: UseIdleDetectionOptions = {}): UseIdleDetectionReturn {

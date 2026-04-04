@@ -65,7 +65,7 @@ export function SiriOrb({ state, onClick, size = 60 }: SiriOrbProps) {
             position: 'absolute',
             inset: `-${size * 0.33}px`,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(0,82,212,0.15) 0%, transparent 70%)',
             animation: `${glowAnim} 3s ease-in-out infinite`,
             pointerEvents: 'none',
           }}
@@ -77,7 +77,7 @@ export function SiriOrb({ state, onClick, size = 60 }: SiriOrbProps) {
             position: 'absolute',
             inset: 0,
             borderRadius: '50%',
-            background: 'conic-gradient(from 0deg, #6366f1, #8b5cf6, #ec4899, #f43f5e, #6366f1)',
+            background: 'conic-gradient(from 0deg, #0052D4, #4364F7, #0043AE, #4364F7, #0052D4)',
             animation: `auxos-orb-rotate ${outerSpeed} linear infinite`,
           }}
         />
@@ -88,7 +88,7 @@ export function SiriOrb({ state, onClick, size = 60 }: SiriOrbProps) {
             position: 'absolute',
             inset: '3px',
             borderRadius: '50%',
-            background: 'conic-gradient(from 180deg, #818cf8, #a78bfa, #f472b6, #fb7185, #818cf8)',
+            background: 'conic-gradient(from 180deg, #4364F7, #EBF0FB, #0052D4, #4364F7)',
             animation: 'auxos-orb-rotate-reverse 6s linear infinite',
             filter: 'blur(4px)',
           }}

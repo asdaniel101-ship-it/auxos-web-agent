@@ -12,6 +12,7 @@ import type { OrbState } from './SiriOrb'
 
 export function AuxosAgent(config: AuxosConfig) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isOrbHovered, setIsOrbHovered] = useState(false)
   const theme = useMemo(() => createTheme(config.theme || {}), [config.theme])
 
   const { messages, isLoading, streamingText, send } = useAgent({
@@ -55,27 +56,24 @@ export function AuxosAgent(config: AuxosConfig) {
     }
   }, [isIdle, config.onIdleDismiss])
 
-  const handleOrbClick = useCallback(() => {
-    if (isOpen) {
-      updateOpen(false)
-    } else {
-      if (isIdle && idleMessage) {
-        config.onIdleDismiss?.()
-        updateOpen(true)
-        setTimeout(() => send(idleMessage), 100)
-      } else {
-        updateOpen(true)
-      }
-    }
-  }, [isOpen, isIdle, idleMessage, config.onIdleDismiss, send, updateOpen])
-
-  const handleBubbleClick = useCallback(() => {
+  // Opens panel and sends the idle message after a short delay to let the panel mount
+  const openWithIdleMessage = useCallback(() => {
     config.onIdleDismiss?.()
     updateOpen(true)
     if (idleMessage) {
       setTimeout(() => send(idleMessage), 100)
     }
   }, [idleMessage, config.onIdleDismiss, send, updateOpen])
+
+  const handleOrbClick = useCallback(() => {
+    if (isOpen) {
+      updateOpen(false)
+    } else if (isIdle && idleMessage) {
+      openWithIdleMessage()
+    } else {
+      updateOpen(true)
+    }
+  }, [isOpen, isIdle, idleMessage, openWithIdleMessage, updateOpen])
 
   return (
     <>
@@ -84,6 +82,8 @@ export function AuxosAgent(config: AuxosConfig) {
         useOrbMode ? (
           <div
             data-auxos-orb
+            onMouseEnter={() => setIsOrbHovered(true)}
+            onMouseLeave={() => setIsOrbHovered(false)}
             style={{
               position: 'fixed',
               bottom: '24px',
@@ -93,13 +93,38 @@ export function AuxosAgent(config: AuxosConfig) {
               alignItems: 'center',
             }}
           >
+            {/* Hover label — shown on hover, hidden when idle speech bubble is visible */}
+            <div
+              style={{
+                position: 'absolute',
+                right: '100%',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                marginRight: '10px',
+                background: theme.colors.glassBg,
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: `1px solid ${theme.colors.glassBorder}`,
+                borderRadius: '10px',
+                padding: '6px 12px',
+                whiteSpace: 'nowrap',
+                fontSize: '13px',
+                color: theme.colors.textSecondary,
+                fontFamily: theme.fonts.body,
+                opacity: isOrbHovered && !isIdle ? 1 : 0,
+                transition: 'opacity 0.2s ease',
+                pointerEvents: isOrbHovered && !isIdle ? 'auto' : 'none',
+              }}
+            >
+              {config.name ?? 'Auxos'}
+            </div>
             <SpeechBubble
               message={idleMessage}
               visible={isIdle}
-              onClick={handleBubbleClick}
+              onClick={openWithIdleMessage}
               theme={theme}
             />
-            <SiriOrb state={orbState} onClick={handleOrbClick} />
+            <SiriOrb state={orbState} onClick={handleOrbClick} size={36} />
           </div>
         ) : (
           <AgentButton isOpen={isOpen} onClick={() => updateOpen(true)} theme={theme} />
