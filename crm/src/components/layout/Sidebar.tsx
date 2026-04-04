@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useStore } from '@/store'
 import {
   LayoutDashboard,
   Users,
@@ -27,13 +28,15 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const teamMembers = useStore((s) => s.teamMembers)
+  const currentUser = teamMembers?.[0]
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r bg-white" aria-label="Main navigation">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r bg-white flex flex-col" aria-label="Main navigation">
       <div className="flex h-14 items-center border-b px-4">
         <span className="text-xl font-bold text-slate-900">CRM</span>
       </div>
-      <nav className="space-y-1 p-3">
+      <nav className="flex-1 space-y-1 p-3">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
@@ -54,6 +57,19 @@ export function Sidebar() {
           )
         })}
       </nav>
+      {currentUser && (
+        <div className="border-t p-3">
+          <div className="flex items-center gap-3 rounded-md px-3 py-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+              {currentUser.avatar}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-slate-900">{currentUser.name}</p>
+              <p className="truncate text-xs text-slate-500">{currentUser.email}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
