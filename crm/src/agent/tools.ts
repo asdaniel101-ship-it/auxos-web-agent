@@ -1,7 +1,7 @@
 import { custom, search } from '@auxos/agent'
 import type { AuxosTool } from '@auxos/agent'
 import type { CrmStore } from '@/store'
-import type { DealStage, ContactStatus, TaskPriority, TaskStatus, ChartType, Report, Settings } from '@/types'
+import type { DealStage, ContactStatus, TaskPriority, TaskStatus, Settings } from '@/types'
 
 /**
  * Pre-animation validation for create/mutate tools.
@@ -308,39 +308,6 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
           userId: 'agent',
         })
         return { success: true, data: { id } }
-      },
-    }),
-
-    custom({
-      name: 'bulk_update_contacts',
-      description: 'Update multiple contacts at once',
-      parameters: {
-        type: 'object',
-        properties: {
-          ids: { type: 'array', items: { type: 'string' }, description: 'Contact IDs to update' },
-          owner: { type: 'string', description: 'New owner' },
-          status: { type: 'string', enum: ['lead', 'prospect', 'customer', 'churned'] },
-        },
-        required: ['ids'],
-      },
-      execute: (input) => {
-        const store = getStore()
-        const ids = input.ids as string[]
-        const updates: Record<string, unknown> = {}
-        if (input.owner) updates.owner = input.owner
-        if (input.status) updates.status = input.status
-        store.bulkUpdateContacts(ids, updates)
-        for (const id of ids) {
-          const contact = store.contacts.find((c) => c.id === id)
-          store.addActivity({
-            type: 'contact_updated',
-            description: `Bulk updated contact ${contact ? `${contact.firstName} ${contact.lastName}` : id}`,
-            entityType: 'contact',
-            entityId: id,
-            userId: 'agent',
-          })
-        }
-        return { success: true, data: { updatedCount: ids.length } }
       },
     }),
 
@@ -779,39 +746,6 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
       },
     }),
 
-    custom({
-      name: 'update_task',
-      description: 'Update an existing task',
-      parameters: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          name: { type: 'string' },
-          assignee: { type: 'string' },
-          priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
-          status: { type: 'string', enum: ['todo', 'in-progress', 'done'] },
-          dueDate: { type: 'string' },
-          notes: { type: 'string' },
-        },
-        required: ['id'],
-      },
-      execute: (input) => {
-        const store = getStore()
-        const id = input.id as string
-        const task = store.tasks.find((t) => t.id === id)
-        if (!task) return { success: false, error: 'Task not found' }
-        const { id: _id, ...updates } = input
-        store.updateTask(id, updates as Partial<typeof task>)
-        store.addActivity({
-          type: 'task_updated',
-          description: `Updated task "${task.name}"`,
-          entityType: 'task',
-          entityId: id,
-          userId: 'agent',
-        })
-        return { success: true, data: { id } }
-      },
-    }),
 
     custom({
       name: 'complete_task',
@@ -1017,49 +951,6 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
       },
     }),
 
-    custom({
-      name: 'generate_report',
-      description: 'Generate/create a new report',
-      parameters: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          type: { type: 'string', enum: ['revenue-by-month', 'deals-by-stage', 'contacts-by-source', 'tasks-by-owner', 'pipeline-forecast', 'custom'] },
-          chartType: { type: 'string', enum: ['bar', 'line', 'pie'] },
-          dateRange: {
-            type: 'object',
-            properties: {
-              start: { type: 'string' },
-              end: { type: 'string' },
-            },
-          },
-          filters: { type: 'object' },
-        },
-        required: ['name', 'type'],
-      },
-      execute: (input) => {
-        const store = getStore()
-        const now = new Date().toISOString().split('T')[0]
-        const report = store.addReport({
-          name: input.name as string,
-          type: input.type as Report['type'],
-          chartType: (input.chartType as ChartType) || 'bar',
-          filters: (input.filters as Record<string, string>) || {},
-          dateRange: (input.dateRange as { start: string; end: string }) || {
-            start: now,
-            end: now,
-          },
-        })
-        store.addActivity({
-          type: 'report_generated',
-          description: `Generated report "${report.name}"`,
-          entityType: 'report',
-          entityId: report.id,
-          userId: 'agent',
-        })
-        return { success: true, data: { id: report.id, name: report.name } }
-      },
-    }),
 
     // ─── Settings ───
     custom({

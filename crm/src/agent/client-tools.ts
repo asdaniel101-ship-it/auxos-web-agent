@@ -27,14 +27,6 @@ const UI_MUTATION_TOOLS = new Set([
   'onboard_client',
 ])
 
-// Tools with cursor animation but NO complete UI submit flow.
-// Animation plays for visual effect, then tool.execute() does the actual mutation.
-// These exist because the CRM has no edit/delete UI for these entities.
-const ANIMATED_WITH_FALLBACK = new Set([
-  'update_task',       // no edit form, only checkbox toggle
-  'bulk_update_contacts', // no bulk UI
-  'generate_report',   // no generation UI
-])
 
 /**
  * Returns CRM tools with visual cursor animation wired in.
