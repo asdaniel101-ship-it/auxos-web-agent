@@ -23,8 +23,6 @@ type QueueItem = {
   resolve: () => void
 }
 
-const queue: QueueItem[] = []
-
 /** Minimum move duration so very short moves don't look instant */
 const MIN_MOVE_MS = 300
 /** Maximum move duration so long-distance moves don't drag */
@@ -32,13 +30,20 @@ const MAX_MOVE_MS = 800
 /** Base speed: pixels per second */
 const MOVE_PX_PER_SEC = 1200
 
+// Use a global queue on window to avoid module duplication in Next.js
+function getQueue(): QueueItem[] {
+  const w = window as any
+  if (!w.__agentCursorQueue) w.__agentCursorQueue = []
+  return w.__agentCursorQueue
+}
+
 /**
  * Queue visual steps and return a Promise that resolves when they complete.
  * The caller should AWAIT this before mutating state.
  */
 export function queueAgentSteps(steps: AgentStep[]): Promise<void> {
   return new Promise((resolve) => {
-    queue.push({ steps, resolve })
+    getQueue().push({ steps, resolve })
     window.dispatchEvent(new CustomEvent('agent-steps-queued'))
   })
 }
@@ -80,14 +85,14 @@ export function AgentCursor() {
   }
 
   const processQueue = useCallback(async () => {
+    const queue = getQueue()
     if (processingRef.current || queue.length === 0) return
     processingRef.current = true
 
-    // Fade in at last known position (or center-bottom as a sane default on first show)
+    // Fade in from the chat button position (bottom-right corner)
     if (lastPosRef.current.x < 0) {
-      const sidebarWidth = 240
-      const startX = sidebarWidth + (window.innerWidth - sidebarWidth) / 2
-      const startY = window.innerHeight / 2
+      const startX = window.innerWidth - 34
+      const startY = window.innerHeight - 34
       lastPosRef.current = { x: startX, y: startY }
       setPos((p) => ({ ...p, x: startX, y: startY, moveDuration: 0 }))
     }

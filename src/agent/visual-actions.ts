@@ -13,6 +13,8 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
   switch (toolName) {
     case 'send_email':
       return queueAgentSteps([
+        { type: 'click', selector: 'a[aria-label="Navigate to Emails"]' },
+        { type: 'wait', delay: 600 },
         { type: 'click', selector: 'button[aria-label="Compose new email"]' },
         { type: 'wait', delay: 500 },
         { type: 'type', selector: 'input[aria-label="Recipient email address"]', text: (input.to as string) || '' },
@@ -25,6 +27,8 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_contact':
       return queueAgentSteps([
+        { type: 'click', selector: 'a[aria-label="Navigate to Contacts"]' },
+        { type: 'wait', delay: 600 },
         { type: 'click', selector: 'button[aria-label="Add new contact"]' },
         { type: 'wait', delay: 500 },
         { type: 'type', selector: '#cf-firstName', text: (input.firstName as string) || '' },
@@ -35,6 +39,8 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_company':
       return queueAgentSteps([
+        { type: 'click', selector: 'a[aria-label="Navigate to Companies"]' },
+        { type: 'wait', delay: 600 },
         { type: 'click', selector: 'button[aria-label="Add new company"]' },
         { type: 'wait', delay: 500 },
         { type: 'type', selector: '#cf-name', text: (input.name as string) || '' },
@@ -43,6 +49,8 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_deal':
       return queueAgentSteps([
+        { type: 'click', selector: 'a[aria-label="Navigate to Deals"]' },
+        { type: 'wait', delay: 600 },
         { type: 'click', selector: 'button[aria-label="Add new deal"]' },
         { type: 'wait', delay: 500 },
         { type: 'type', selector: '#df-name', text: (input.name as string) || '' },
@@ -51,6 +59,8 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'create_task':
       return queueAgentSteps([
+        { type: 'click', selector: 'a[aria-label="Navigate to Tasks"]' },
+        { type: 'wait', delay: 600 },
         { type: 'click', selector: 'button[aria-label="Add new task"]' },
         { type: 'wait', delay: 500 },
         { type: 'type', selector: '#tf-name', text: (input.name as string) || '' },
@@ -100,6 +110,47 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
         { type: 'click', selector: 'button[aria-label="Add new deal"]' },
         { type: 'wait', delay: 500 },
         { type: 'type', selector: '#df-name', text: (input.dealName as string) || '' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'list_deals':
+    case 'get_deal':
+      return queueAgentSteps([
+        { type: 'move', selector: '[aria-label="Deals kanban board"]' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'list_contacts':
+    case 'get_contact':
+      return queueAgentSteps([
+        { type: 'move', selector: 'input[aria-label="Search contacts"]' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'list_companies':
+    case 'get_company':
+      return queueAgentSteps([
+        { type: 'move', selector: 'input[aria-label="Search companies"]' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'list_tasks':
+    case 'get_task':
+      return queueAgentSteps([
+        { type: 'move', selector: 'input[aria-label="Search tasks"]' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'list_emails':
+    case 'get_email_thread':
+      return queueAgentSteps([
+        { type: 'move', selector: 'input[aria-label="Search email threads"]' },
+        { type: 'wait', delay: 400 },
+      ])
+
+    case 'search_crm':
+      return queueAgentSteps([
+        { type: 'move', selector: 'input[aria-label="Search contacts"]' },
         { type: 'wait', delay: 400 },
       ])
 

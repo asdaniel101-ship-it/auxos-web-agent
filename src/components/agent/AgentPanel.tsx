@@ -30,9 +30,11 @@ const SUGGESTION_CHIPS = [
 interface AgentPanelProps {
   isOpen: boolean
   onClose: () => void
+  onMinimize?: () => void
+  onRestore?: () => void
 }
 
-export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
+export function AgentPanel({ isOpen, onClose, onMinimize, onRestore }: AgentPanelProps) {
   const [claudeMessages, setClaudeMessages] = useState<ClaudeMessage[]>([])
   const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([])
   const [input, setInput] = useState('')
@@ -105,6 +107,7 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: currentMessages,
+            stream: false,
             context: {
               teamMembers: currentStore.teamMembers.map((m) => m.name),
               currentPage: pathname,
@@ -145,6 +148,9 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
           break
         }
 
+        // Minimize panel so the user watches the cursor on the main UI
+        onMinimize?.()
+
         // Execute tool calls with visual animations
         const toolResults: any[] = []
         for (const toolUse of toolUseBlocks) {
@@ -180,6 +186,9 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
         ]
       }
 
+      // Restore panel before showing the response
+      onRestore?.()
+
       // Update state
       setClaudeMessages(currentMessages)
       setDisplayMessages([
@@ -187,6 +196,7 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
         { role: 'assistant', content: finalText || 'Done!' },
       ])
     } catch (error: any) {
+      onRestore?.()
       setDisplayMessages([
         ...newDisplayMessages,
         {
