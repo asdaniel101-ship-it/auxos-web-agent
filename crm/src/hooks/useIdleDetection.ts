@@ -4,10 +4,12 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 
 interface UseIdleDetectionOptions {
-  /** Idle timeout in ms. Default 10000 (10s). */
+  /** Idle timeout in ms. Default 30000 (30s). */
   timeout?: number
   /** Cooldown after dismiss in ms. Default 300000 (5 min). */
   cooldown?: number
+  /** Auto-dismiss idle message after this many ms. Default 5000 (5s). */
+  autoDismiss?: number
   /** Set to false to pause detection (e.g., when panel is open). */
   enabled?: boolean
 }
@@ -19,18 +21,18 @@ interface UseIdleDetectionReturn {
 }
 
 const MESSAGES: Record<string, string> = {
-  '/contacts': 'Need help finding a contact?',
-  '/companies': 'Want to look up a company?',
-  '/deals': 'Want me to update any deal stages?',
-  '/tasks': 'I can help knock out some tasks.',
-  '/emails': 'Want me to draft an email?',
-  '/dashboard': 'Want a summary of today\'s activity?',
-  '/': 'Want a summary of today\'s activity?',
-  '/reports': 'I can generate a report for you.',
-  '/settings': 'Need help with configuration?',
+  '/contacts': 'I can find or manage contacts for you',
+  '/companies': 'I can look up company details for you',
+  '/deals': 'I can update deal stages and info',
+  '/tasks': 'I can help manage your tasks',
+  '/emails': 'I can draft emails for you',
+  '/dashboard': 'I can summarize today\'s activity',
+  '/': 'I can summarize today\'s activity',
+  '/reports': 'I can generate reports for you',
+  '/settings': 'I can help with settings',
 }
 
-const FALLBACK_MESSAGE = 'Need a hand with anything?'
+const FALLBACK_MESSAGE = 'I can help — just ask'
 
 function getMessageForRoute(pathname: string): string {
   // Exact match first
@@ -41,15 +43,23 @@ function getMessageForRoute(pathname: string): string {
 }
 
 export function useIdleDetection({
-  timeout = 10000,
+  timeout = 30000,
   cooldown = 300000,
+  autoDismiss = 5000,
   enabled = true,
 }: UseIdleDetectionOptions = {}): UseIdleDetectionReturn {
   const pathname = usePathname()
   const [isIdle, setIsIdle] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cooldownRef = useRef(false)
+
+  const clearAllTimers = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
+    if (autoDismissTimerRef.current) clearTimeout(autoDismissTimerRef.current)
+  }, [])
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -57,8 +67,7 @@ export function useIdleDetection({
     // If in cooldown or disabled, don't start a new timer
     if (cooldownRef.current || !enabled) return
 
-    // If currently idle, dismiss on any activity
-    setIsIdle(false)
+    setIsIdle((prev) => prev ? false : prev)
 
     timerRef.current = setTimeout(() => {
       setIsIdle(true)
@@ -68,12 +77,12 @@ export function useIdleDetection({
   const dismiss = useCallback(() => {
     setIsIdle(false)
     if (timerRef.current) clearTimeout(timerRef.current)
+    if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
 
     // Start cooldown
     cooldownRef.current = true
     cooldownTimerRef.current = setTimeout(() => {
       cooldownRef.current = false
-      // Reset timer after cooldown ends
       resetTimer()
     }, cooldown)
   }, [cooldown, resetTimer])
@@ -86,31 +95,35 @@ export function useIdleDetection({
       return
     }
 
-    const events = ['mousemove', 'click', 'scroll', 'keydown'] as const
-
-    // Start initial timer
     resetTimer()
 
-    // Reset on any activity
     const handler = () => resetTimer()
+    const events = ['mousemove', 'click', 'scroll', 'keydown'] as const
     events.forEach((evt) => window.addEventListener(evt, handler, { passive: true }))
 
     return () => {
       events.forEach((evt) => window.removeEventListener(evt, handler))
-      if (timerRef.current) clearTimeout(timerRef.current)
-      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
+      clearAllTimers()
     }
-  }, [enabled, resetTimer])
+  }, [enabled, resetTimer, clearAllTimers])
+
+  // Auto-dismiss: just hide the bubble without triggering cooldown
+  useEffect(() => {
+    if (!isIdle || autoDismiss <= 0) return
+    autoDismissTimerRef.current = setTimeout(() => setIsIdle(false), autoDismiss)
+    return () => {
+      if (autoDismissTimerRef.current) clearTimeout(autoDismissTimerRef.current)
+    }
+  }, [isIdle, autoDismiss])
 
   // Reset on page navigation
   useEffect(() => {
     setIsIdle(false)
-    if (timerRef.current) clearTimeout(timerRef.current)
-    if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
+    clearAllTimers()
     if (!cooldownRef.current && enabled) {
       timerRef.current = setTimeout(() => setIsIdle(true), timeout)
     }
-  }, [pathname, timeout, enabled])
+  }, [pathname, timeout, enabled, clearAllTimers])
 
   return {
     isIdle,
