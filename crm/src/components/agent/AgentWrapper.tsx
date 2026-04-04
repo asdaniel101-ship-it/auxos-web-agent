@@ -92,7 +92,7 @@ export function AgentWrapper() {
   const tools = useMemo(() => getCrmTools(), [])
 
   const { isIdle, idleMessage, dismiss } = useIdleDetection({
-    timeout: 30000,
+    timeout: 15000,
     cooldown: 300000,
     enabled: !panelOpen,
   })
@@ -100,13 +100,16 @@ export function AgentWrapper() {
   const executing = useAgentUIStore((s) => s.executing)
 
   const handleEvent = useCallback((event: AuxosEvent) => {
-    const { executing: isExec, startExecution, setCurrentAction, finishExecution } = useAgentUIStore.getState()
+    const { executing: isExec, startExecution, setCurrentAction, finishExecution, askUser } = useAgentUIStore.getState()
     switch (event.type) {
       case 'tool_start':
         if (!isExec) startExecution()
         setCurrentAction(getToolLabel(event.toolName, event.input))
         break
-      case 'response_end':
+      case 'ask_user':
+        askUser(event.question, event.respond)
+        break
+      case 'done':
         if (isExec) finishExecution()
         break
       case 'stopped':
@@ -130,7 +133,7 @@ export function AgentWrapper() {
         'Move the Meridian Corp deal to Negotiation',
         "Reassign all of Priya's tasks to Marcus",
         'Show me all deals worth over $100k',
-        'What does my pipeline look like?',
+        'What workflows can you help me with?',
       ]}
       onNavigate={(path) => router.push(path)}
       onEvent={handleEvent}
@@ -170,7 +173,7 @@ export function AgentWrapper() {
       idleMessage={idleMessage}
       onIdleDismiss={dismiss}
       onOpenChange={setPanelOpen}
-      minimized={executing}
+      executing={executing}
     />
   )
 }

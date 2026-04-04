@@ -1,4 +1,5 @@
 import { queueAgentSteps } from '@/components/agent/AgentCursor'
+import { useStore } from '@/store'
 
 type Step = { type: 'move' | 'click' | 'scroll-to'; selector: string }
   | { type: 'type'; selector: string; text: string }
@@ -176,12 +177,15 @@ function createTaskSteps(input: Record<string, unknown>): Step[] {
   ]
 }
 
-function sendEmailSteps(input: Record<string, unknown>): Step[] {
+/** Steps to open compose form and fill in fields + optional linked contact/deal. */
+function composeEmailSteps(input: Record<string, unknown>): Step[] {
   const to = (input.to as string) || ''
   const subject = (input.subject as string) || ''
   const body = (input.body as string) || ''
+  const contactId = (input.linkedContactId as string) || ''
+  const dealId = (input.linkedDealId as string) || ''
 
-  return [
+  const steps: Step[] = [
     ...navTo('Emails'),
     { type: 'click', selector: 'button[aria-label="Compose new email"]' },
     { type: 'wait', delay: 600 },
@@ -189,6 +193,40 @@ function sendEmailSteps(input: Record<string, unknown>): Step[] {
     { type: 'type', selector: '#ce-subject', text: subject },
     { type: 'type', selector: '#ce-body', text: body },
     { type: 'wait', delay: 400 },
+  ]
+
+  if (contactId) {
+    const state = useStore.getState()
+    const contact = state.contacts.find((c) => c.id === contactId)
+    if (contact) {
+      steps.push(
+        { type: 'click', selector: '[aria-label="Link to contact"]' },
+        { type: 'wait', delay: 300 },
+        { type: 'select-option', text: `${contact.firstName} ${contact.lastName}` },
+        { type: 'wait', delay: 400 },
+      )
+    }
+  }
+
+  if (dealId) {
+    const state = useStore.getState()
+    const deal = state.deals.find((d) => d.id === dealId)
+    if (deal) {
+      steps.push(
+        { type: 'click', selector: '[aria-label="Link to deal"]' },
+        { type: 'wait', delay: 300 },
+        { type: 'select-option', text: deal.name },
+        { type: 'wait', delay: 400 },
+      )
+    }
+  }
+
+  return steps
+}
+
+function sendEmailSteps(input: Record<string, unknown>): Step[] {
+  return [
+    ...composeEmailSteps(input),
     { type: 'click', selector: 'button[aria-label="Send email"]' },
     { type: 'wait', delay: 500 },
   ]
@@ -374,6 +412,54 @@ function updateTaskSteps(input: Record<string, unknown>): Step[] {
   ]
 }
 
+// ─── List with filters ───
+
+function listDealsSteps(input: Record<string, unknown>): Step[] {
+  const stage = (input.stage as string) || ''
+  const owner = (input.owner as string) || ''
+  const minValue = input.minValue != null ? String(input.minValue) : ''
+  const maxValue = input.maxValue != null ? String(input.maxValue) : ''
+
+  const steps: Step[] = [
+    ...navTo('Deals'),
+    // Ensure list view is active so filter bar is visible
+    { type: 'click', selector: 'button[aria-label="List view"]' },
+    { type: 'wait', delay: 400 },
+  ]
+
+  if (stage) {
+    steps.push(
+      { type: 'click', selector: '[aria-label="Filter by stage"]' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: stage },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  if (owner) {
+    steps.push(
+      { type: 'click', selector: '[aria-label="Filter by owner"]' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: owner },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  if (minValue) {
+    steps.push({ type: 'type', selector: 'input[aria-label="Minimum deal value"]', text: minValue })
+  }
+
+  if (maxValue) {
+    steps.push({ type: 'type', selector: 'input[aria-label="Maximum deal value"]', text: maxValue })
+  }
+
+  if (minValue || maxValue) {
+    steps.push({ type: 'wait', delay: 400 })
+  }
+
+  return steps
+}
+
 // ─── Main router ───
 
 export function queueVisualAction(toolName: string, input: Record<string, unknown>): Promise<void> {
@@ -394,16 +480,7 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
       return queueAgentSteps(sendEmailSteps(input))
 
     case 'draft_email':
-      return queueAgentSteps([
-        ...navTo('Emails'),
-        { type: 'click', selector: 'button[aria-label="Compose new email"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#ce-to', text: (input.to as string) || '' },
-        { type: 'type', selector: '#ce-subject', text: (input.subject as string) || '' },
-        { type: 'type', selector: '#ce-body', text: (input.body as string) || '' },
-        { type: 'wait', delay: 400 },
-        // Don't click Send — this is a draft
-      ])
+      return queueAgentSteps(composeEmailSteps(input))
 
     case 'update_contact':
       return queueAgentSteps(updateContactSteps(input))
@@ -443,6 +520,9 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
 
     case 'invite_team_member':
       return queueAgentSteps(inviteTeamMemberSteps(input))
+
+    case 'list_deals':
+      return queueAgentSteps(listDealsSteps(input))
 
     case 'get_deal':
     case 'get_contact':

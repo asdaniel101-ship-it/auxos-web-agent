@@ -115,6 +115,8 @@ export interface AuxosConfig {
   onOpenChange?: (isOpen: boolean) => void
   /** When true, hides the panel and entry point (orb/button) without interrupting the agent loop. */
   minimized?: boolean
+  /** When true, dims the orb to indicate the agent is busy executing actions. */
+  executing?: boolean
 }
 
 export type AuxosEvent =
@@ -126,6 +128,8 @@ export type AuxosEvent =
   | { type: 'response_end' }
   | { type: 'error'; error: string; retryable: boolean }
   | { type: 'stopped' }
+  | { type: 'done' }
+  | { type: 'ask_user'; question: string; respond: (answer: string) => void }
 
 /** Server-side API handler configuration. */
 export interface ApiHandlerConfig {

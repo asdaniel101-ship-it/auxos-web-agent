@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import type { AuxosTool, DisplayMessage, ToolResult, AuxosEvent } from '../types'
 
 interface ClaudeMessage {
@@ -52,15 +52,31 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
   const toolMap = useRef<Map<string, AuxosTool['execute']>>(new Map())
   toolMap.current = new Map(tools.map((t) => [t.name, t.execute]))
 
-  const toolSchemas = tools.map((t) => ({
-    name: t.name,
-    description: t.description,
-    input_schema: {
-      type: t.parameters.type,
-      properties: t.parameters.properties,
-      required: t.parameters.required || [],
-    },
-  }))
+  const toolSchemas = useMemo(
+    () => [
+      ...tools.map((t) => ({
+        name: t.name,
+        description: t.description,
+        input_schema: {
+          type: t.parameters.type,
+          properties: t.parameters.properties,
+          required: t.parameters.required || [],
+        },
+      })),
+      {
+        name: 'ask_user',
+        description: 'Ask the user a question and wait for their response. Use when you need clarification, a choice between options, or missing information to proceed.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            question: { type: 'string', description: 'The question to ask the user' },
+          },
+          required: ['question'],
+        },
+      },
+    ],
+    [tools]
+  )
 
   const emit = useCallback(
     (event: AuxosEvent) => {
@@ -323,7 +339,18 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
 
             emit({ type: 'tool_start', toolName: toolUse.name, input: toolUse.input })
 
-            if (!executeFn) {
+            if (toolUse.name === 'ask_user') {
+              const question = (toolUse.input as any).question || 'Please provide input'
+              result = await new Promise<ToolResult>((resolve) => {
+                const onAbort = () => resolve({ success: false, error: 'User cancelled' })
+                const respond = (answer: string) => {
+                  signal.removeEventListener('abort', onAbort)
+                  resolve({ success: true, data: answer })
+                }
+                emit({ type: 'ask_user', question, respond })
+                signal.addEventListener('abort', onAbort, { once: true })
+              })
+            } else if (!executeFn) {
               result = { success: false, error: `Unknown tool: ${toolUse.name}` }
             } else {
               try {
@@ -413,6 +440,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
         abortRef.current = null
         setIsLoading(false)
         setStreamingText('')
+        emit({ type: 'done' })
       }
     },
     [displayMessages, isLoading, endpoint, getContext, systemPrompt, onNavigate, toolSchemas, maxIterations, emit]

@@ -4,8 +4,8 @@ import type { AuxosTheme } from '../types'
 
 const keyframes = `
 @keyframes auxos-bubble-fade-in {
-  from { opacity: 0; transform: translateX(10px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 `
 
@@ -26,10 +26,9 @@ export function SpeechBubble({ message, visible, onClick, theme }: SpeechBubbleP
         onClick={onClick}
         style={{
           position: 'absolute',
-          right: '100%',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          marginRight: '12px',
+          bottom: '100%',
+          right: '0',
+          marginBottom: '12px',
           background: theme.colors.glassBg,
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
@@ -50,14 +49,14 @@ export function SpeechBubble({ message, visible, onClick, theme }: SpeechBubbleP
         <div
           style={{
             position: 'absolute',
-            right: '-6px',
-            top: '50%',
-            transform: 'translateY(-50%) rotate(45deg)',
+            bottom: '-6px',
+            right: '14px',
+            transform: 'rotate(45deg)',
             width: '10px',
             height: '10px',
             background: theme.colors.glassBg,
             borderRight: `1px solid ${theme.colors.glassBorder}`,
-            borderTop: `1px solid ${theme.colors.glassBorder}`,
+            borderBottom: `1px solid ${theme.colors.glassBorder}`,
           }}
         />
       </button>
