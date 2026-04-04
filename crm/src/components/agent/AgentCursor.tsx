@@ -161,6 +161,16 @@ export function AgentCursor() {
             el.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
             el.dispatchEvent(new MouseEvent('mouseup', center))
             ;(el as HTMLElement).click()
+            // Handle form submit buttons (type="submit" inside a <form>).
+            // .click() triggers React's onClick via event delegation, but
+            // for submit buttons the form's onSubmit needs an explicit nudge.
+            if (el instanceof HTMLButtonElement && el.type === 'submit') {
+              const form = el.closest('form')
+              if (form) {
+                form.requestSubmit(el)
+              }
+            }
+
             await sleep(120)
             setPos((p) => ({ ...p, clicking: false }))
             await sleep(250)
