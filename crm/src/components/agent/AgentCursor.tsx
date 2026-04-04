@@ -23,6 +23,19 @@ type QueueItem = {
 
 const queue: QueueItem[] = []
 let isProcessing = false
+let aborted = false
+
+/**
+ * Cancel all pending cursor animation steps.
+ * Resolves all queued promises so awaiting callers unblock immediately.
+ */
+export function cancelAllSteps() {
+  aborted = true
+  while (queue.length > 0) {
+    const item = queue.shift()!
+    item.resolve()
+  }
+}
 
 /**
  * Queue visual steps and return a Promise that resolves when they complete.
@@ -42,12 +55,15 @@ export function AgentCursor() {
   const processQueue = useCallback(async () => {
     if (processingRef.current || queue.length === 0) return
     processingRef.current = true
+    aborted = false
     setPos((p) => ({ ...p, visible: true }))
 
     while (queue.length > 0) {
+      if (aborted) break
       const item = queue.shift()!
 
       for (const step of item.steps) {
+        if (aborted) break
         switch (step.type) {
           case 'scroll-to': {
             if (!step.selector) break
@@ -60,7 +76,7 @@ export function AgentCursor() {
           case 'move': {
             if (!step.selector) break
             const el = await waitForElement(step.selector, 2000)
-            if (!el) break
+            if (!el || aborted) break
             const rect = el.getBoundingClientRect()
             setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
             await sleep(600)
@@ -70,11 +86,12 @@ export function AgentCursor() {
           case 'click': {
             if (!step.selector) break
             const el = await waitForElement(step.selector, 2000)
-            if (!el) break
+            if (!el || aborted) break
             const rect = el.getBoundingClientRect()
             // Move to element
             setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
             await sleep(500)
+            if (aborted) break
             // Click animation
             setPos((p) => ({ ...p, clicking: true }))
             await sleep(200)
@@ -88,7 +105,7 @@ export function AgentCursor() {
           case 'type': {
             if (!step.selector || !step.text) break
             const el = await waitForElement(step.selector, 3000) as HTMLInputElement | HTMLTextAreaElement | null
-            if (!el) break
+            if (!el || aborted) break
             el.scrollIntoView({ behavior: 'smooth', block: 'center' })
             await sleep(200)
             const rect = el.getBoundingClientRect()
@@ -102,12 +119,14 @@ export function AgentCursor() {
             el.focus()
             el.click()
             await sleep(200)
+            if (aborted) break
             // Type character by character
             const nativeSetter =
               Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set ||
               Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
             let currentValue = el.value || ''
             for (const char of step.text) {
+              if (aborted) break
               currentValue += char
               if (nativeSetter) {
                 nativeSetter.call(el, currentValue)
@@ -133,10 +152,13 @@ export function AgentCursor() {
       item.resolve()
     }
 
-    // Hide cursor
-    await sleep(500)
+    // Hide cursor (skip if aborted — cancelAllSteps already resolved all promises)
+    if (!aborted) {
+      await sleep(500)
+    }
     setPos((p) => ({ ...p, visible: false }))
     processingRef.current = false
+    aborted = false
   }, [])
 
   useEffect(() => {
