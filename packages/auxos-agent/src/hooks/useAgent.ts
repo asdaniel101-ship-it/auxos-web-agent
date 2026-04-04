@@ -104,7 +104,10 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
       return response
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        throw new DOMException('Aborted', 'AbortError')
+        if (signal?.aborted) {
+          throw new DOMException('Aborted', 'AbortError')
+        }
+        throw new Error('Request timed out. Please try again.')
       }
       if (retries > 0) {
         const delay = RETRY_DELAYS[MAX_RETRIES - retries] || 3000
@@ -120,7 +123,8 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
   }
 
   async function parseStream(
-    response: Response
+    response: Response,
+    signal?: AbortSignal
   ): Promise<{ text: string; assistantContent: any[]; stopReason: string }> {
     const reader = response.body!.getReader()
     const decoder = new TextDecoder()
@@ -133,6 +137,10 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
     let toolInputJson = ''
 
     while (true) {
+      if (signal?.aborted) {
+        reader.cancel()
+        throw new DOMException('Aborted', 'AbortError')
+      }
       const { done, value } = await reader.read()
       if (done) break
 
@@ -276,7 +284,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
 
           if (contentType.includes('text/event-stream')) {
             // Streaming response
-            const parsed = await parseStream(response)
+            const parsed = await parseStream(response, signal)
             textContent = parsed.text
             assistantContent = parsed.assistantContent
             stopReason = parsed.stopReason
