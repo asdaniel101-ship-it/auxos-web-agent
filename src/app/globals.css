@@ -59,3 +59,14 @@
     border-radius: 3px;
   }
 }
+
+/* Agent cursor ripple animations */
+@keyframes agent-ripple {
+  0% { width: 16px; height: 16px; opacity: 0.8; left: 6px; top: 4px; }
+  100% { width: 56px; height: 56px; opacity: 0; left: -14px; top: -16px; }
+}
+@keyframes agent-ripple-fill {
+  0% { width: 16px; height: 16px; opacity: 0.3; left: 6px; top: 4px; }
+  50% { opacity: 0.2; }
+  100% { width: 32px; height: 32px; opacity: 0; left: -2px; top: -4px; }
+}

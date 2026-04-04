@@ -7,6 +7,7 @@ import { AgentMessage } from './AgentMessage'
 import { useStore } from '@/store'
 import { useRouter, usePathname } from 'next/navigation'
 import { executeTool } from '@/agent/executor'
+import { queueVisualAction } from '@/agent/visual-actions'
 
 interface ClaudeMessage {
   role: 'user' | 'assistant'
@@ -19,11 +20,11 @@ interface DisplayMessage {
 }
 
 const SUGGESTION_CHIPS = [
-  'Show me all deals worth over $100k',
   'Create a new contact named Alex Chen at Quantum Labs',
-  'What does my pipeline look like?',
   'Move the Meridian Corp deal to Negotiation',
+  'Send an email to the sales team about Q2 targets',
   "Reassign all of Priya's tasks to Marcus",
+  'Show me all deals worth over $100k',
 ]
 
 interface AgentPanelProps {
@@ -144,9 +145,13 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
           break
         }
 
-        // Execute tool calls
+        // Execute tool calls with visual animations
         const toolResults: any[] = []
         for (const toolUse of toolUseBlocks) {
+          // 1. Play cursor animation FIRST (user sees the action)
+          await queueVisualAction(toolUse.name, toolUse.input)
+
+          // 2. THEN mutate state
           const latestStore = useStore.getState()
           const result = executeTool(toolUse.name, toolUse.input, latestStore)
 

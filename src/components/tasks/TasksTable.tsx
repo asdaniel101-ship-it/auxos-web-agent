@@ -213,6 +213,8 @@ export function TasksTable() {
                 return (
                   <TableRow
                     key={task.id}
+                    data-task-id={task.id}
+                    data-id={task.id}
                     className={cn(overdue && 'bg-red-50')}
                   >
                     {/* Done checkbox */}
