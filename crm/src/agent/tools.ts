@@ -1071,7 +1071,7 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
     // ─── Composite: Onboard Client ───
     custom({
       name: 'onboard_client',
-      description: 'Full client onboarding: creates company, contact, deal, and standard onboarding tasks',
+      description: 'Full client onboarding: creates company, contact, deal, follow-up task, and sends a welcome email',
       parameters: {
         type: 'object',
         properties: {
@@ -1160,37 +1160,55 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
           userId: 'agent',
         })
 
-        // 4. Create onboarding tasks
-        const taskDefs = [
-          { name: 'Welcome call', daysOut: 1 },
-          { name: 'Send proposal', daysOut: 3 },
-          { name: 'Schedule kickoff', daysOut: 5 },
-          { name: 'Complete setup checklist', daysOut: 7 },
-        ]
+        // 4. Create follow-up task
+        const dueDate = new Date()
+        dueDate.setDate(dueDate.getDate() + 1)
+        const task = store.addTask({
+          name: `Follow up with ${input.contactFirstName as string} ${input.contactLastName as string}`,
+          assignee: owner,
+          priority: 'high',
+          status: 'todo',
+          dueDate: dueDate.toISOString().split('T')[0],
+          linkedDealId: deal.id,
+          linkedContactId: contact.id,
+          notes: '',
+        })
+        store.addActivity({
+          type: 'task_created',
+          description: `Created follow-up task "${task.name}"`,
+          entityType: 'task',
+          entityId: task.id,
+          userId: 'agent',
+        })
 
-        const createdTasks: { id: string; name: string }[] = []
-        for (const def of taskDefs) {
-          const dueDate = new Date()
-          dueDate.setDate(dueDate.getDate() + def.daysOut)
-          const task = store.addTask({
-            name: def.name,
-            assignee: owner,
-            priority: 'medium',
-            status: 'todo',
-            dueDate: dueDate.toISOString().split('T')[0],
-            linkedDealId: deal.id,
-            linkedContactId: contact.id,
-            notes: '',
-          })
-          store.addActivity({
-            type: 'task_created',
-            description: `Created onboarding task "${task.name}"`,
-            entityType: 'task',
-            entityId: task.id,
-            userId: 'agent',
-          })
-          createdTasks.push({ id: task.id, name: task.name })
-        }
+        // 5. Send welcome email
+        const contactEmail = input.contactEmail as string
+        const contactName = `${input.contactFirstName as string} ${input.contactLastName as string}`
+        const emailSubject = `Welcome aboard, ${contactName}!`
+        const emailBody = `Hi ${input.contactFirstName as string},\n\nThank you for choosing to work with us! We're excited to get started on the ${companyNameInput} partnership.\n\nI'll be your main point of contact. Let's schedule a kickoff call this week to align on next steps.\n\nBest regards`
+        const messageId = `msg-${Date.now()}`
+        const thread = store.addEmailThread({
+          subject: emailSubject,
+          participants: ['Agent', contactEmail],
+          messages: [
+            {
+              id: messageId,
+              from: 'Agent',
+              to: contactEmail,
+              body: emailBody,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+          linkedContactId: contact.id,
+          linkedDealId: deal.id,
+        })
+        store.addActivity({
+          type: 'email_sent',
+          description: `Sent welcome email to ${contactName}`,
+          entityType: 'email',
+          entityId: thread.id,
+          userId: 'agent',
+        })
 
         return {
           success: true,
@@ -1198,10 +1216,11 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
             company: { id: company.id, name: company.name },
             contact: {
               id: contact.id,
-              name: `${contact.firstName} ${contact.lastName}`,
+              name: contactName,
             },
             deal: { id: deal.id, name: deal.name, value: deal.value },
-            tasks: createdTasks,
+            task: { id: task.id, name: task.name },
+            email: { threadId: thread.id, subject: emailSubject },
           },
         }
       },
