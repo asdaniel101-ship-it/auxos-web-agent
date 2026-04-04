@@ -7,6 +7,8 @@ import type { CrmStore } from '@/store'
 // The execute functions are never called server-side, so a null store getter is safe.
 const tools = createCrmTools(() => null as unknown as CrmStore)
 
+export const maxDuration = 60
+
 export const POST = createApiHandler({
   tools,
   systemPrompt: (context: Record<string, unknown>) =>
