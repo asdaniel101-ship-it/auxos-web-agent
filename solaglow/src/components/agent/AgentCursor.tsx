@@ -72,7 +72,12 @@ export function AgentCursor() {
             setPos((p) => ({ ...p, clicking: true }))
             await sleep(200)
             setPos((p) => ({ ...p, clicking: false }))
-            ;(el as HTMLElement).click()
+            // Only fire real click on non-navigation elements (buttons, inputs, etc)
+            // Skip real click on links/buttons inside header to avoid racing with router.push
+            const isNavElement = el.closest('header') && (el.tagName === 'A' || el.tagName === 'BUTTON')
+            if (!isNavElement) {
+              ;(el as HTMLElement).click()
+            }
             await sleep(500)
             break
           }
