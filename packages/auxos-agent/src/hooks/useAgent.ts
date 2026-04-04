@@ -233,16 +233,16 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
         { role: 'user', content: text },
       ]
 
+      let currentMessages = newClaude
+      let finalText = ''
+      let toolMessages: DisplayMessage[] = []
+      let iterations = 0
+
+      const controller = new AbortController()
+      abortRef.current = controller
+      const signal = controller.signal
+
       try {
-        let currentMessages = newClaude
-        let finalText = ''
-        let toolMessages: DisplayMessage[] = []
-        let iterations = 0
-
-        const controller = new AbortController()
-        abortRef.current = controller
-        const signal = controller.signal
-
         // Tool execution loop with max iterations guard
         while (iterations < maxIterations) {
           iterations++
