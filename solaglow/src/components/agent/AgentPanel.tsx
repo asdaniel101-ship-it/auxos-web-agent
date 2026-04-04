@@ -108,15 +108,16 @@ export function AgentPanel({ isOpen, onClose }: AgentPanelProps) {
         const toolUseBlocks = assistantContent.filter(
           (b: any) => b.type === 'tool_use'
         )
-        const textBlocks = assistantContent.filter(
-          (b: any) => b.type === 'text'
-        )
-
-        if (textBlocks.length > 0) {
-          finalText += textBlocks.map((b: any) => b.text).join('\n')
-        }
 
         if (toolUseBlocks.length === 0 || data.stop_reason === 'end_turn') {
+          // Only capture text from the final response — drop intermediate
+          // "thinking" text that accompanies tool calls so the chat stays clean.
+          const textBlocks = assistantContent.filter(
+            (b: any) => b.type === 'text'
+          )
+          if (textBlocks.length > 0) {
+            finalText = textBlocks.map((b: any) => b.text).join('\n')
+          }
           currentMessages = [
             ...currentMessages,
             { role: 'assistant', content: assistantContent },
