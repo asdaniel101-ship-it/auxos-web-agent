@@ -8,7 +8,7 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
     // ─── Navigation ───
     custom({
       name: 'navigate_to',
-      description: 'Navigate to a page. Valid pages: dashboard, contacts, companies, deals, tasks, emails, reports, settings',
+      description: 'Navigate to a page or entity detail. For top-level pages, use just `page`. For entity detail pages (e.g., a specific deal or contact), also provide `entityId`.',
       parameters: {
         type: 'object',
         properties: {
@@ -17,11 +17,18 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
             description: 'Page to navigate to',
             enum: ['dashboard', 'contacts', 'companies', 'deals', 'tasks', 'emails', 'reports', 'settings'],
           },
+          entityId: {
+            type: 'string',
+            description: 'Optional entity ID to navigate to a detail page (e.g., deal ID to go to /deals/dl-009)',
+          },
         },
         required: ['page'],
       },
       execute: (input) => {
-        return { success: true, data: { navigate: '/' + input.page } }
+        const path = input.entityId
+          ? `/${input.page}/${input.entityId}`
+          : `/${input.page}`
+        return { success: true, data: { navigate: path } }
       },
     }),
 
@@ -459,10 +466,10 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
         const company = deal.companyId
           ? store.companies.find((c) => c.id === deal.companyId)
           : null
-        const contactNames = deal.contactIds
+        const contacts = deal.contactIds
           .map((cid) => {
             const c = store.contacts.find((ct) => ct.id === cid)
-            return c ? `${c.firstName} ${c.lastName}` : null
+            return c ? { id: c.id, name: `${c.firstName} ${c.lastName}`, email: c.email, title: c.title } : null
           })
           .filter(Boolean)
         const linkedTasks = store.tasks.filter((t) => t.linkedDealId === deal.id)
@@ -471,7 +478,7 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
           data: {
             ...deal,
             companyName: company?.name ?? null,
-            contactNames,
+            contacts,
             linkedTasks: linkedTasks.map((t) => ({
               id: t.id,
               name: t.name,
