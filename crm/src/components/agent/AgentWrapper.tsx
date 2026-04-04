@@ -92,7 +92,7 @@ export function AgentWrapper() {
   const tools = useMemo(() => getCrmTools(), [])
 
   const { isIdle, idleMessage, dismiss } = useIdleDetection({
-    timeout: 10000,
+    timeout: 30000,
     cooldown: 300000,
     enabled: !panelOpen,
   })
