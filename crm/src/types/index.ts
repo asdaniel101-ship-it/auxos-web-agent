@@ -99,9 +99,9 @@ export interface TeamMember {
 
 export interface ActivityEntry {
   id: string
-  type: 'contact_created' | 'deal_created' | 'deal_stage_changed' | 'task_completed' | 'email_sent' | 'note_added' | 'contact_updated' | 'deal_updated' | 'task_created' | 'company_created'
+  type: 'contact_created' | 'contact_updated' | 'contact_deleted' | 'deal_created' | 'deal_updated' | 'deal_stage_changed' | 'company_created' | 'company_updated' | 'task_created' | 'task_updated' | 'task_completed' | 'email_sent' | 'note_added' | 'report_generated'
   description: string
-  entityType: 'contact' | 'company' | 'deal' | 'task' | 'email'
+  entityType: 'contact' | 'company' | 'deal' | 'task' | 'email' | 'report'
   entityId: string
   userId: string
   timestamp: string
