@@ -265,10 +265,9 @@ export function AgentPanel({
           ) : (
             <div>
               {messages.map((msg, i) => {
-                if (msg.type === 'tool') {
-                  return <ToolMessage key={i} toolName={msg.toolName} result={msg.result} theme={theme} />
-                }
-                // Intermediate assistant reasoning: followed by a tool message
+                // Tool execution cards are hidden — the user sees actions via cursor animation
+                if (msg.type === 'tool') return null
+                // Intermediate assistant reasoning before a tool call
                 const isIntermediate =
                   msg.type === 'assistant' &&
                   i < messages.length - 1 &&
