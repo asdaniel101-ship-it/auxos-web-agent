@@ -29,29 +29,30 @@ function isViewingEntity(page: string, entityId: string): boolean {
   return window.location.pathname === `/${page.toLowerCase()}/${entityId}`
 }
 
-/**
- * Map tool name to the sidebar nav page it belongs to.
- * Returns null if no mapping exists.
- */
 function toolNavPage(toolName: string): string | null {
   const map: Record<string, string> = {
     list_contacts: 'Contacts',
     get_contact: 'Contacts',
+    create_contact: 'Contacts',
     update_contact: 'Contacts',
     delete_contact: 'Contacts',
     bulk_update_contacts: 'Contacts',
     list_companies: 'Companies',
     get_company: 'Companies',
+    create_company: 'Companies',
     update_company: 'Companies',
     list_deals: 'Deals',
+    create_deal: 'Deals',
     update_deal: 'Deals',
     move_deal_stage: 'Deals',
     list_tasks: 'Tasks',
     get_task: 'Tasks',
+    create_task: 'Tasks',
     update_task: 'Tasks',
     complete_task: 'Tasks',
     list_emails: 'Emails',
     get_email_thread: 'Emails',
+    send_email: 'Emails',
     reply_to_email: 'Emails',
     list_reports: 'Reports',
     generate_report: 'Reports',
@@ -63,45 +64,25 @@ function toolNavPage(toolName: string): string | null {
   return map[toolName] ?? null
 }
 
-/**
- * Queue visual cursor actions for a tool execution.
- * Returns a Promise that resolves when the animation completes.
- * The caller should AWAIT this before mutating data.
- */
-function selectOption(triggerSelector: string, valueId: string): Step[] {
-  return [
-    { type: 'click', selector: triggerSelector },
-    { type: 'wait', delay: 400 },
-    { type: 'click', selector: `[role="option"][data-value="${valueId}"]` },
-    { type: 'wait', delay: 300 },
-  ]
-}
+// ─── Reusable step builders ───
 
-function emailComposeSteps(input: Record<string, unknown>): Step[] {
-  const steps: Step[] = [
-    { type: 'click', selector: 'button[aria-label="Compose new email"]' },
+function navTo(page: string): Step[] {
+  if (isOnPage(page)) return []
+  return [
+    { type: 'click', selector: `a[aria-label="Navigate to ${page}"]` },
     { type: 'wait', delay: 600 },
-    { type: 'type', selector: 'input[aria-label="Recipient email address"]', text: (input.to as string) || '' },
-    { type: 'type', selector: 'input[aria-label="Email subject"]', text: (input.subject as string) || '' },
-    { type: 'type', selector: 'textarea[aria-label="Email body"]', text: (input.body as string) || '' },
   ]
-
-  if (input.linkedContactId) {
-    steps.push(...selectOption('button[aria-label="Link to contact"]', input.linkedContactId as string))
-  }
-  if (input.linkedDealId) {
-    steps.push(...selectOption('button[aria-label="Link to deal"]', input.linkedDealId as string))
-  }
-
-  steps.push({ type: 'wait', delay: 400 })
-  return steps
 }
 
-function navClick(page: string) {
-  return [
-    { type: 'click' as const, selector: `a[aria-label="Navigate to ${page}"]` },
-    { type: 'wait' as const, delay: 600 },
-  ]
+function advanceWizard(times: number): Step[] {
+  const steps: Step[] = []
+  for (let i = 0; i < times; i++) {
+    steps.push(
+      { type: 'click', selector: 'button[aria-label="Go to next step"]' },
+      { type: 'wait', delay: 400 },
+    )
+  }
+  return steps
 }
 
 /** Navigate to a page (if needed) then scroll to and click an entity row. */
@@ -109,9 +90,8 @@ function navigateToEntityRow(page: string, entityId: string): Promise<void> | nu
   if (isViewingEntity(page, entityId)) return Promise.resolve()
   const selector = entityRowSelector(page, entityId)
   if (!selector) return null
-  const nav = isOnPage(page) ? [] : navClick(page)
   return queueAgentSteps([
-    ...nav,
+    ...navTo(page),
     { type: 'wait', delay: 500 },
     { type: 'scroll-to', selector },
     { type: 'wait', delay: 400 },
@@ -119,85 +99,141 @@ function navigateToEntityRow(page: string, entityId: string): Promise<void> | nu
   ])
 }
 
+// ─── Per-tool visual flows ───
+
+function createContactSteps(input: Record<string, unknown>): Step[] {
+  const firstName = (input.firstName as string) || ''
+  const lastName = (input.lastName as string) || ''
+  const email = (input.email as string) || ''
+  const phone = (input.phone as string) || ''
+  const title = (input.title as string) || ''
+
+  return [
+    // Navigate to Contacts
+    ...navTo('Contacts'),
+    // Open form
+    { type: 'click', selector: 'button[aria-label="Add new contact"]' },
+    { type: 'wait', delay: 600 },
+    // Step 0: Basic Info
+    { type: 'type', selector: '#cf-firstName', text: firstName },
+    { type: 'type', selector: '#cf-lastName', text: lastName },
+    { type: 'type', selector: '#cf-email', text: email },
+    ...(phone ? [{ type: 'type' as const, selector: '#cf-phone', text: phone }] : []),
+    ...(title ? [{ type: 'type' as const, selector: '#cf-title', text: title }] : []),
+    // Advance through Steps 1 (Company), 2 (Notes), 3 (Assign)
+    ...advanceWizard(3),
+    // Submit
+    { type: 'click', selector: 'button[aria-label="Submit contact form"]' },
+    { type: 'wait', delay: 600 },
+  ]
+}
+
+function createCompanySteps(input: Record<string, unknown>): Step[] {
+  const name = (input.name as string) || ''
+
+  return [
+    ...navTo('Companies'),
+    { type: 'click', selector: 'button[aria-label="Add new company"]' },
+    { type: 'wait', delay: 600 },
+    { type: 'type', selector: '#cf-name', text: name },
+    { type: 'wait', delay: 300 },
+    { type: 'click', selector: 'button[aria-label="Create company"]' },
+    { type: 'wait', delay: 600 },
+  ]
+}
+
+function createDealSteps(input: Record<string, unknown>): Step[] {
+  const name = (input.name as string) || ''
+  const value = String((input.value as number) || 0)
+
+  return [
+    ...navTo('Deals'),
+    { type: 'click', selector: 'button[aria-label="Add new deal"]' },
+    { type: 'wait', delay: 600 },
+    // Step 0: Name & Value
+    { type: 'type', selector: '#df-name', text: name },
+    { type: 'type', selector: '#df-value', text: value },
+    // Advance through Steps 1-4 (Company, Contacts, Stage, Owner)
+    ...advanceWizard(4),
+    // Submit
+    { type: 'click', selector: 'button[aria-label="Create deal"]' },
+    { type: 'wait', delay: 600 },
+  ]
+}
+
+function createTaskSteps(input: Record<string, unknown>): Step[] {
+  const name = (input.name as string) || ''
+
+  return [
+    ...navTo('Tasks'),
+    { type: 'click', selector: 'button[aria-label="Add new task"]' },
+    { type: 'wait', delay: 600 },
+    { type: 'type', selector: '#tf-name', text: name },
+    { type: 'wait', delay: 300 },
+    { type: 'click', selector: 'button[aria-label="Create task"]' },
+    { type: 'wait', delay: 600 },
+  ]
+}
+
+function sendEmailSteps(input: Record<string, unknown>): Step[] {
+  const to = (input.to as string) || ''
+  const subject = (input.subject as string) || ''
+  const body = (input.body as string) || ''
+
+  return [
+    ...navTo('Emails'),
+    { type: 'click', selector: 'button[aria-label="Compose new email"]' },
+    { type: 'wait', delay: 600 },
+    { type: 'type', selector: '#ce-to', text: to },
+    { type: 'type', selector: '#ce-subject', text: subject },
+    { type: 'type', selector: '#ce-body', text: body },
+    { type: 'wait', delay: 400 },
+    { type: 'click', selector: 'button[aria-label="Send email"]' },
+    { type: 'wait', delay: 500 },
+  ]
+}
+
+// ─── Main router ───
+
 export function queueVisualAction(toolName: string, input: Record<string, unknown>): Promise<void> {
   switch (toolName) {
-    case 'send_email':
-      return queueAgentSteps([
-        ...navClick('Emails'),
-        ...emailComposeSteps(input),
-        { type: 'click', selector: 'button[aria-label="Send email"]' },
-        { type: 'wait', delay: 500 },
-      ])
-
     case 'create_contact':
-      return queueAgentSteps([
-        ...navClick('Contacts'),
-        { type: 'click', selector: 'button[aria-label="Add new contact"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#cf-firstName', text: (input.firstName as string) || '' },
-        { type: 'type', selector: '#cf-lastName', text: (input.lastName as string) || '' },
-        { type: 'type', selector: '#cf-email', text: (input.email as string) || '' },
-        { type: 'wait', delay: 400 },
-      ])
+      return queueAgentSteps(createContactSteps(input))
 
     case 'create_company':
-      return queueAgentSteps([
-        ...navClick('Companies'),
-        { type: 'click', selector: 'button[aria-label="Add new company"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#cf-name', text: (input.name as string) || '' },
-        { type: 'wait', delay: 400 },
-      ])
+      return queueAgentSteps(createCompanySteps(input))
 
     case 'create_deal':
-      return queueAgentSteps([
-        ...navClick('Deals'),
-        { type: 'click', selector: 'button[aria-label="Add new deal"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#df-name', text: (input.name as string) || '' },
-        { type: 'wait', delay: 400 },
-      ])
+      return queueAgentSteps(createDealSteps(input))
 
     case 'create_task':
-      return queueAgentSteps([
-        ...navClick('Tasks'),
-        { type: 'click', selector: 'button[aria-label="Add new task"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#tf-name', text: (input.name as string) || '' },
-        { type: 'wait', delay: 400 },
-      ])
+      return queueAgentSteps(createTaskSteps(input))
 
-    case 'onboard_client':
+    case 'send_email':
+      return queueAgentSteps(sendEmailSteps(input))
+
+    case 'draft_email':
       return queueAgentSteps([
-        ...navClick('Companies'),
-        { type: 'click', selector: 'button[aria-label="Add new company"]' },
-        { type: 'wait', delay: 500 },
-        { type: 'type', selector: '#cf-name', text: (input.companyName as string) || '' },
-        { type: 'wait', delay: 300 },
-        ...navClick('Contacts'),
-        { type: 'click', selector: 'button[aria-label="Add new contact"]' },
-        { type: 'wait', delay: 500 },
-        { type: 'type', selector: '#cf-firstName', text: (input.contactFirstName as string) || '' },
-        { type: 'type', selector: '#cf-lastName', text: (input.contactLastName as string) || '' },
-        { type: 'type', selector: '#cf-email', text: (input.contactEmail as string) || '' },
-        { type: 'wait', delay: 300 },
-        ...navClick('Deals'),
-        { type: 'click', selector: 'button[aria-label="Add new deal"]' },
-        { type: 'wait', delay: 500 },
-        { type: 'type', selector: '#df-name', text: (input.dealName as string) || '' },
+        ...navTo('Emails'),
+        { type: 'click', selector: 'button[aria-label="Compose new email"]' },
+        { type: 'wait', delay: 600 },
+        { type: 'type', selector: '#ce-to', text: (input.to as string) || '' },
+        { type: 'type', selector: '#ce-subject', text: (input.subject as string) || '' },
+        { type: 'type', selector: '#ce-body', text: (input.body as string) || '' },
         { type: 'wait', delay: 400 },
+        // Don't click Send — this is a draft
       ])
 
     case 'complete_task':
       return queueAgentSteps([
-        ...navClick('Tasks'),
+        ...navTo('Tasks'),
         { type: 'click', selector: `[data-task-id="${input.id}"] button[role="checkbox"]` },
         { type: 'wait', delay: 400 },
       ])
 
     case 'move_deal_stage':
       return queueAgentSteps([
-        ...navClick('Deals'),
+        ...navTo('Deals'),
         { type: 'move', selector: `[data-deal-id="${input.id}"]` },
         { type: 'wait', delay: 400 },
       ])
@@ -210,19 +246,13 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
       return navigateToEntityRow(page, input.id as string) ?? Promise.resolve()
     }
 
-    case 'draft_email':
-      return queueAgentSteps([
-        ...navClick('Emails'),
-        ...emailComposeSteps(input),
-      ])
-
     case 'navigate_to': {
       const page = capitalize(input.page as string)
       if (input.entityId) {
         return navigateToEntityRow(page, input.entityId as string) ?? Promise.resolve()
       }
       if (isOnPage(page)) return Promise.resolve()
-      return queueAgentSteps(navClick(page))
+      return queueAgentSteps(navTo(page))
     }
 
     case 'onboard_client': {
@@ -235,73 +265,24 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
       const emailSubject = `Welcome aboard, ${firstName} ${lastName}!`
       const emailBody = `Hi ${firstName},\n\nThank you for choosing to work with us! We're excited to get started on the ${companyName} partnership.\n\nI'll be your main point of contact. Let's schedule a kickoff call this week to align on next steps.\n\nBest regards`
 
-      // Helper: click Next 3 times to advance through the contact wizard
-      const advanceContactSteps: Step[] = [
-        { type: 'click', selector: 'button[aria-label="Go to next step"]' },
-        { type: 'wait', delay: 400 },
-        { type: 'click', selector: 'button[aria-label="Go to next step"]' },
-        { type: 'wait', delay: 400 },
-        { type: 'click', selector: 'button[aria-label="Go to next step"]' },
-        { type: 'wait', delay: 400 },
-      ]
-
       return queueAgentSteps([
         // 1. Create company
-        ...navClick('Companies'),
-        { type: 'click', selector: 'button[aria-label="Add new company"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#cf-name', text: companyName },
-        { type: 'wait', delay: 300 },
-        { type: 'click', selector: 'button[aria-label="Create company"]' },
-        { type: 'wait', delay: 800 },
-
+        ...createCompanySteps({ name: companyName }),
         // 2. Create contact
-        ...navClick('Contacts'),
-        { type: 'click', selector: 'button[aria-label="Add new contact"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#cf-firstName', text: firstName },
-        { type: 'type', selector: '#cf-lastName', text: lastName },
-        { type: 'type', selector: '#cf-email', text: email },
-        ...advanceContactSteps,
-        { type: 'click', selector: 'button[aria-label="Submit contact form"]' },
-        { type: 'wait', delay: 800 },
-
+        ...createContactSteps({ firstName, lastName, email }),
         // 3. Create deal
-        ...navClick('Deals'),
-        { type: 'click', selector: 'button[aria-label="Add new deal"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#df-name', text: `${companyName} Deal` },
-        { type: 'type', selector: '#df-value', text: dealValue },
-        { type: 'wait', delay: 300 },
-        { type: 'click', selector: 'button[aria-label="Create deal"]' },
-        { type: 'wait', delay: 800 },
-
+        ...createDealSteps({ name: `${companyName} Deal`, value: dealValue }),
         // 4. Create follow-up task
-        ...navClick('Tasks'),
-        { type: 'click', selector: 'button[aria-label="Add new task"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#tf-name', text: taskName },
-        { type: 'wait', delay: 300 },
-        { type: 'click', selector: 'button[aria-label="Create task"]' },
-        { type: 'wait', delay: 800 },
-
+        ...createTaskSteps({ name: taskName }),
         // 5. Send welcome email
-        ...navClick('Emails'),
-        { type: 'click', selector: 'button[aria-label="Compose new email"]' },
-        { type: 'wait', delay: 600 },
-        { type: 'type', selector: '#ce-to', text: email },
-        { type: 'type', selector: '#ce-subject', text: emailSubject },
-        { type: 'type', selector: '#ce-body', text: emailBody },
-        { type: 'wait', delay: 400 },
-        { type: 'click', selector: 'button[aria-label="Send email"]' },
-        { type: 'wait', delay: 500 },
+        ...sendEmailSteps({ to: email, subject: emailSubject, body: emailBody }),
       ])
     }
 
     default: {
       const page = toolNavPage(toolName)
       if (page && !isOnPage(page)) {
-        return queueAgentSteps(navClick(page))
+        return queueAgentSteps(navTo(page))
       }
       return Promise.resolve()
     }
