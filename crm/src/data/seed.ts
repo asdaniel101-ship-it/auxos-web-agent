@@ -336,6 +336,14 @@ export function generateSeedData(): SeedData {
     })
   }
 
+  // Override Nova Analytics deal for demo reliability
+  const novaAnalyticsDeal = deals.find((d) => d.name.includes('Nova Analytics'))
+  if (novaAnalyticsDeal) {
+    novaAnalyticsDeal.name = 'Nova Analytics - Platform Upgrade'
+    novaAnalyticsDeal.stage = 'Prospecting'
+    novaAnalyticsDeal.probability = STAGE_PROBABILITY['Prospecting']
+  }
+
   // -------------------------------------------------------------------------
   // Tasks (40)
   // -------------------------------------------------------------------------
