@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, KeyboardEvent, useState } from 'react'
-import { Sparkles, X, Send } from 'lucide-react'
+import { Sparkles, X, Send, Square } from 'lucide-react'
 import { AgentMessage } from './AgentMessage'
 import { ToolMessage } from './ToolMessage'
 import type { AuxosTheme, DisplayMessage } from '../types'
@@ -13,6 +13,7 @@ interface AgentPanelProps {
   isLoading: boolean
   streamingText: string
   onSend: (text: string) => void
+  onStop?: () => void
   name?: string
   tagline?: string
   suggestions?: string[]
@@ -26,6 +27,7 @@ export function AgentPanel({
   isLoading,
   streamingText,
   onSend,
+  onStop,
   name = 'Assistant',
   tagline = 'AI Assistant',
   suggestions = [],
@@ -248,7 +250,7 @@ export function AgentPanel({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={`Ask ${name} anything...`}
-              disabled={isLoading}
+              disabled={false}
               rows={1}
               suppressHydrationWarning
               style={{
@@ -265,33 +267,56 @@ export function AgentPanel({
                 maxHeight: '76px',
                 lineHeight: '20px',
                 fontFamily: theme.fonts.body,
-                opacity: isLoading ? 0.5 : 1,
+                opacity: 1,
               }}
             />
-            <button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              aria-label="Send message"
-              style={{
-                flexShrink: 0,
-                height: '28px',
-                width: '28px',
-                borderRadius: theme.radii.button,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
-                cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed',
-                transition: 'all 0.15s',
-                backgroundColor: input.trim() && !isLoading ? theme.colors.primary : theme.colors.surfaceBorder,
-                color: input.trim() && !isLoading ? 'white' : theme.colors.textMuted,
-              }}
-            >
-              <Send style={{ height: '14px', width: '14px' }} />
-            </button>
+            {isLoading ? (
+              <button
+                onClick={onStop}
+                aria-label="Stop agent"
+                style={{
+                  flexShrink: 0,
+                  height: '28px',
+                  width: '28px',
+                  borderRadius: theme.radii.button,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                }}
+              >
+                <Square style={{ height: '12px', width: '12px', fill: 'white' }} />
+              </button>
+            ) : (
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim()}
+                aria-label="Send message"
+                style={{
+                  flexShrink: 0,
+                  height: '28px',
+                  width: '28px',
+                  borderRadius: theme.radii.button,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: 'none',
+                  cursor: input.trim() ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.15s',
+                  backgroundColor: input.trim() ? theme.colors.primary : theme.colors.surfaceBorder,
+                  color: input.trim() ? 'white' : theme.colors.textMuted,
+                }}
+              >
+                <Send style={{ height: '14px', width: '14px' }} />
+              </button>
+            )}
           </div>
           <p style={{ fontSize: '10px', color: theme.colors.textMuted, textAlign: 'center', margin: '6px 0 0' }}>
-            Enter to send · Shift+Enter for new line
+            {isLoading ? 'Click stop to cancel' : 'Enter to send · Shift+Enter for new line'}
           </p>
         </div>
       </div>
