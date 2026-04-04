@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, KeyboardEvent, useState } from 'react'
-import { X, Send } from 'lucide-react'
+import { X, Send, Square } from 'lucide-react'
 import { SiriOrb } from './SiriOrb'
 import { AgentMessage } from './AgentMessage'
 import { ToolMessage } from './ToolMessage'
@@ -14,6 +14,7 @@ interface AgentPanelProps {
   isLoading: boolean
   streamingText: string
   onSend: (text: string) => void
+  onStop?: () => void
   name?: string
   tagline?: string
   suggestions?: string[]
@@ -38,6 +39,7 @@ export function AgentPanel({
   isLoading,
   streamingText,
   onSend,
+  onStop,
   name = 'Assistant',
   tagline = 'AI Assistant',
   suggestions = [],
@@ -254,7 +256,7 @@ export function AgentPanel({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={`Ask ${name}...`}
-              disabled={isLoading}
+              disabled={false}
               rows={1}
               suppressHydrationWarning
               style={{
@@ -271,35 +273,57 @@ export function AgentPanel({
                 maxHeight: '76px',
                 lineHeight: '28px',
                 fontFamily: theme.fonts.body,
-                opacity: isLoading ? 0.5 : 1,
+                opacity: 1,
               }}
             />
 
-            {/* Send button — only visible when there's input */}
-            <button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              aria-label="Send message"
-              style={{
-                flexShrink: 0,
-                height: '32px',
-                width: '32px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
-                cursor: input.trim() && !isLoading ? 'pointer' : 'default',
-                transition: 'all 0.2s',
-                background: input.trim() && !isLoading
-                  ? `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.primaryDark})`
-                  : 'transparent',
-                color: input.trim() && !isLoading ? 'white' : 'transparent',
-                opacity: input.trim() && !isLoading ? 1 : 0,
-              }}
-            >
-              <Send style={{ height: '14px', width: '14px' }} />
-            </button>
+            {isLoading ? (
+              <button
+                onClick={onStop}
+                aria-label="Stop agent"
+                style={{
+                  flexShrink: 0,
+                  height: '32px',
+                  width: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  background: '#ef4444',
+                  color: 'white',
+                }}
+              >
+                <Square style={{ height: '12px', width: '12px', fill: 'white' }} />
+              </button>
+            ) : (
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim()}
+                aria-label="Send message"
+                style={{
+                  flexShrink: 0,
+                  height: '32px',
+                  width: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: 'none',
+                  cursor: input.trim() ? 'pointer' : 'default',
+                  transition: 'all 0.2s',
+                  background: input.trim()
+                    ? `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.primaryDark})`
+                    : 'transparent',
+                  color: input.trim() ? 'white' : 'transparent',
+                  opacity: input.trim() ? 1 : 0,
+                }}
+              >
+                <Send style={{ height: '14px', width: '14px' }} />
+              </button>
+            )}
           </div>
         </div>
       </div>
