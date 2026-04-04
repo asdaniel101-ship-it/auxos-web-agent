@@ -23,9 +23,7 @@ export type CrmStore = ContactsSlice &
     initialize: () => void
   }
 
-type StoreApi = ReturnType<typeof create<CrmStore>>
-
-function createStore(): StoreApi {
+function createStore() {
   return create<CrmStore>((set, get, api) => ({
     ...createContactsSlice(set, get, api),
     ...createCompaniesSlice(set, get, api),
@@ -55,16 +53,17 @@ function createStore(): StoreApi {
   }))
 }
 
-// Singleton: survive Next.js module duplication across chunks
-const getOrCreateStore = (): StoreApi => {
+// Singleton: survive Next.js module duplication across chunks.
+// Without this, each bundle chunk calls create() independently,
+// producing separate store instances that don't share state.
+function getOrCreateStore() {
   if (typeof window !== 'undefined') {
     const w = window as any
     if (!w.__crmStore) {
       w.__crmStore = createStore()
     }
-    return w.__crmStore
+    return w.__crmStore as ReturnType<typeof createStore>
   }
-  // Server-side: always create fresh (never actually used for mutations)
   return createStore()
 }
 
