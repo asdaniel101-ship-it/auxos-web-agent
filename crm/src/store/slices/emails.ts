@@ -2,11 +2,24 @@ import { EmailThread, EmailMessage } from '@/types'
 import { StateCreator } from 'zustand'
 import { generateId } from '@/lib/utils'
 
+export interface EmailDraft {
+  to: string
+  subject: string
+  body: string
+  linkedContactId: string
+  linkedDealId: string
+}
+
 export interface EmailsSlice {
   emailThreads: EmailThread[]
   setEmailThreads: (emailThreads: EmailThread[]) => void
   addEmailThread: (thread: Omit<EmailThread, 'id' | 'createdAt'>) => EmailThread
   replyToThread: (threadId: string, message: Omit<EmailMessage, 'id' | 'timestamp'>) => void
+  emailDraft: EmailDraft | null
+  composeOpen: boolean
+  setEmailDraft: (draft: EmailDraft) => void
+  clearEmailDraft: () => void
+  setComposeOpen: (open: boolean) => void
 }
 
 export const createEmailsSlice: StateCreator<EmailsSlice> = (set) => ({
@@ -29,4 +42,9 @@ export const createEmailsSlice: StateCreator<EmailsSlice> = (set) => ({
       ),
     }))
   },
+  emailDraft: null,
+  composeOpen: false,
+  setEmailDraft: (draft) => set({ emailDraft: draft, composeOpen: true }),
+  clearEmailDraft: () => set({ emailDraft: null }),
+  setComposeOpen: (open) => set({ composeOpen: open, ...(!open ? { emailDraft: null } : {}) }),
 })
