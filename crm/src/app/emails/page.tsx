@@ -10,9 +10,9 @@ import { Mail, PenSquare } from 'lucide-react'
 
 export default function EmailsPage() {
   const emailThreads = useStore((s) => s.emailThreads)
+  const setComposeOpen = useStore((s) => s.setComposeOpen)
 
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null)
-  const [composeOpen, setComposeOpen] = useState(false)
 
   const selectedThread = emailThreads.find((t) => t.id === selectedThreadId) ?? null
 
@@ -65,7 +65,7 @@ export default function EmailsPage() {
       </div>
 
       {/* Compose dialog */}
-      <ComposeEmail open={composeOpen} onOpenChange={setComposeOpen} />
+      <ComposeEmail />
     </div>
   )
 }

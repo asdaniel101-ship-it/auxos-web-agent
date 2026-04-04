@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '@/store'
 import { useToast } from '@/components/ui/use-toast'
 import {
@@ -25,11 +25,6 @@ import { Send } from 'lucide-react'
 
 const CURRENT_USER = 'Sarah Chen'
 
-interface ComposeEmailProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
 interface FormData {
   to: string
   subject: string
@@ -38,7 +33,7 @@ interface FormData {
   linkedDealId: string
 }
 
-const initialData: FormData = {
+const emptyForm: FormData = {
   to: '',
   subject: '',
   body: '',
@@ -46,28 +41,44 @@ const initialData: FormData = {
   linkedDealId: '',
 }
 
-export function ComposeEmail({ open, onOpenChange }: ComposeEmailProps) {
+export function ComposeEmail() {
   const contacts = useStore((s) => s.contacts)
   const deals = useStore((s) => s.deals)
   const addEmailThread = useStore((s) => s.addEmailThread)
   const addActivity = useStore((s) => s.addActivity)
+  const emailDraft = useStore((s) => s.emailDraft)
+  const composeOpen = useStore((s) => s.composeOpen)
+  const setComposeOpen = useStore((s) => s.setComposeOpen)
   const { toast } = useToast()
 
-  const [data, setData] = useState<FormData>(initialData)
+  const [data, setData] = useState<FormData>(emptyForm)
   const [sending, setSending] = useState(false)
+
+  // When a draft arrives, populate the form
+  useEffect(() => {
+    if (emailDraft) {
+      setData({
+        to: emailDraft.to,
+        subject: emailDraft.subject,
+        body: emailDraft.body,
+        linkedContactId: emailDraft.linkedContactId,
+        linkedDealId: emailDraft.linkedDealId,
+      })
+    }
+  }, [emailDraft])
 
   function setField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setData((prev) => ({ ...prev, [key]: value }))
   }
 
   function reset() {
-    setData(initialData)
+    setData(emptyForm)
     setSending(false)
   }
 
   function handleClose(open: boolean) {
     if (!open) reset()
-    onOpenChange(open)
+    setComposeOpen(open)
   }
 
   function handleSend() {
@@ -114,7 +125,7 @@ export function ComposeEmail({ open, onOpenChange }: ComposeEmailProps) {
   const canSend = data.to.trim() && data.subject.trim() && data.body.trim() && !sending
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={composeOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>New Email</DialogTitle>
@@ -141,7 +152,7 @@ export function ComposeEmail({ open, onOpenChange }: ComposeEmailProps) {
               id="ce-subject"
               value={data.subject}
               onChange={(e) => setField('subject', e.target.value)}
-              placeholder="Email subject…"
+              placeholder="Email subject..."
               aria-label="Email subject"
             />
           </div>
@@ -153,7 +164,7 @@ export function ComposeEmail({ open, onOpenChange }: ComposeEmailProps) {
               id="ce-body"
               value={data.body}
               onChange={(e) => setField('body', e.target.value)}
-              placeholder="Write your email…"
+              placeholder="Write your email..."
               className="min-h-[140px] resize-none text-sm"
               aria-label="Email body"
             />
