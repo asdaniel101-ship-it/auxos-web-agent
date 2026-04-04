@@ -2,6 +2,7 @@ import { queueAgentSteps } from '@/components/agent/AgentCursor'
 
 type Step = { type: 'move' | 'click' | 'scroll-to'; selector: string }
   | { type: 'type'; selector: string; text: string }
+  | { type: 'select-option'; text: string }
   | { type: 'wait'; delay: number }
   | { type: 'dismiss' }
 
@@ -193,6 +194,186 @@ function sendEmailSteps(input: Record<string, unknown>): Step[] {
   ]
 }
 
+// ─── Entity detail navigation ───
+
+/** Navigate to an entity's detail page by clicking its row in the list view. */
+function navToEntityDetail(page: string, entityId: string): Step[] {
+  const attr = entityAttr[page]
+  if (!attr) return navTo(page)
+  const rowSelector = `tr[${attr}="${entityId}"]`
+  return [
+    ...navTo(page),
+    { type: 'wait', delay: 500 },
+    { type: 'scroll-to', selector: rowSelector },
+    { type: 'wait', delay: 400 },
+    { type: 'click', selector: rowSelector },
+    { type: 'wait', delay: 600 },
+  ]
+}
+
+// ─── Update flows (detail page inline edit) ───
+
+function updateContactSteps(input: Record<string, unknown>): Step[] {
+  const id = (input.id as string) || ''
+  const steps: Step[] = [
+    ...navToEntityDetail('Contacts', id),
+    { type: 'click', selector: 'button[aria-label="Edit contact"]' },
+    { type: 'wait', delay: 400 },
+  ]
+  if (input.firstName) steps.push({ type: 'type', selector: 'input[aria-label="First name"]', text: input.firstName as string })
+  if (input.lastName) steps.push({ type: 'type', selector: 'input[aria-label="Last name"]', text: input.lastName as string })
+  if (input.email) steps.push({ type: 'type', selector: 'input[aria-label="Email address"]', text: input.email as string })
+  if (input.phone) steps.push({ type: 'type', selector: 'input[aria-label="Phone number"]', text: input.phone as string })
+  if (input.title) steps.push({ type: 'type', selector: 'input[aria-label="Job title"]', text: input.title as string })
+  steps.push(
+    { type: 'wait', delay: 300 },
+    { type: 'click', selector: 'button[aria-label="Save contact changes"]' },
+    { type: 'wait', delay: 500 },
+  )
+  return steps
+}
+
+function updateCompanySteps(input: Record<string, unknown>): Step[] {
+  const id = (input.id as string) || ''
+  const steps: Step[] = [
+    ...navToEntityDetail('Companies', id),
+    { type: 'click', selector: 'button[aria-label="Edit company"]' },
+    { type: 'wait', delay: 400 },
+  ]
+  if (input.name) steps.push({ type: 'type', selector: 'input[aria-label="Company name"]', text: input.name as string })
+  if (input.industry) steps.push({ type: 'type', selector: 'input[aria-label="Company industry"]', text: input.industry as string })
+  if (input.website) steps.push({ type: 'type', selector: 'input[aria-label="Company website"]', text: input.website as string })
+  steps.push(
+    { type: 'wait', delay: 300 },
+    { type: 'click', selector: 'button[aria-label="Save company changes"]' },
+    { type: 'wait', delay: 500 },
+  )
+  return steps
+}
+
+function updateDealSteps(input: Record<string, unknown>): Step[] {
+  const id = (input.id as string) || ''
+  const steps: Step[] = [
+    ...navToEntityDetail('Deals', id),
+    { type: 'click', selector: 'button[aria-label="Edit deal"]' },
+    { type: 'wait', delay: 400 },
+  ]
+  if (input.name) steps.push({ type: 'type', selector: 'input[aria-label="Deal name"]', text: input.name as string })
+  if (input.value) steps.push({ type: 'type', selector: 'input[aria-label="Deal value"]', text: String(input.value) })
+  steps.push(
+    { type: 'wait', delay: 300 },
+    { type: 'click', selector: 'button[aria-label="Save deal changes"]' },
+    { type: 'wait', delay: 500 },
+  )
+  return steps
+}
+
+// ─── Delete flows (detail page confirmation dialog) ───
+
+function deleteContactSteps(input: Record<string, unknown>): Step[] {
+  const id = (input.id as string) || ''
+  return [
+    ...navToEntityDetail('Contacts', id),
+    { type: 'click', selector: 'button[aria-label="Delete contact"]' },
+    { type: 'wait', delay: 500 },
+    { type: 'click', selector: 'button[aria-label="Confirm delete contact"]' },
+    { type: 'wait', delay: 600 },
+  ]
+}
+
+function deleteCompanySteps(input: Record<string, unknown>): Step[] {
+  const id = (input.id as string) || ''
+  return [
+    ...navToEntityDetail('Companies', id),
+    { type: 'click', selector: 'button[aria-label="Delete company"]' },
+    { type: 'wait', delay: 500 },
+    { type: 'click', selector: 'button[aria-label="Confirm delete company"]' },
+    { type: 'wait', delay: 600 },
+  ]
+}
+
+// ─── Deal stage change (detail page select) ───
+
+function moveDealStageSteps(input: Record<string, unknown>): Step[] {
+  const id = (input.id as string) || ''
+  const stage = (input.stage as string) || ''
+  return [
+    ...navToEntityDetail('Deals', id),
+    { type: 'click', selector: '[aria-label="Change deal stage"]' },
+    { type: 'wait', delay: 400 },
+    { type: 'select-option', text: stage },
+    { type: 'wait', delay: 400 },
+  ]
+}
+
+// ─── Reply to email ───
+
+function replyToEmailSteps(input: Record<string, unknown>): Step[] {
+  const threadId = (input.threadId as string) || ''
+  const body = (input.body as string) || ''
+  return [
+    ...navTo('Emails'),
+    { type: 'wait', delay: 400 },
+    // Click the email thread in the list
+    { type: 'click', selector: `[data-thread-id="${threadId}"]` },
+    { type: 'wait', delay: 600 },
+    { type: 'type', selector: 'textarea[aria-label="Reply body"]', text: body },
+    { type: 'wait', delay: 400 },
+    { type: 'click', selector: 'button[aria-label="Send reply"]' },
+    { type: 'wait', delay: 500 },
+  ]
+}
+
+// ─── Settings ───
+
+function updateSettingsSteps(input: Record<string, unknown>): Step[] {
+  const steps: Step[] = [
+    ...navTo('Settings'),
+    { type: 'wait', delay: 400 },
+  ]
+  if (input.name) steps.push({ type: 'type', selector: '#profile-name', text: input.name as string })
+  if (input.email) steps.push({ type: 'type', selector: '#profile-email', text: input.email as string })
+  steps.push(
+    { type: 'wait', delay: 300 },
+    // Click the save profile button
+    { type: 'click', selector: 'button[aria-label="Save profile"]' },
+    { type: 'wait', delay: 500 },
+  )
+  return steps
+}
+
+function inviteTeamMemberSteps(input: Record<string, unknown>): Step[] {
+  const name = (input.name as string) || ''
+  const email = (input.email as string) || ''
+  return [
+    ...navTo('Settings'),
+    { type: 'wait', delay: 400 },
+    // Click the Team tab
+    { type: 'click', selector: 'button[role="tab"][value="team"]' },
+    { type: 'wait', delay: 400 },
+    { type: 'type', selector: '#invite-name', text: name },
+    { type: 'type', selector: '#invite-email', text: email },
+    { type: 'wait', delay: 300 },
+    { type: 'click', selector: 'button[aria-label="Invite team member"]' },
+    { type: 'wait', delay: 500 },
+  ]
+}
+
+// ─── Task update (checkbox for status, navigate for others) ───
+
+function updateTaskSteps(input: Record<string, unknown>): Step[] {
+  const id = (input.id as string) || ''
+  // Tasks only support status toggle via checkbox, no edit form exists
+  return [
+    ...navTo('Tasks'),
+    { type: 'wait', delay: 400 },
+    { type: 'scroll-to', selector: `[data-task-id="${id}"]` },
+    { type: 'wait', delay: 300 },
+    { type: 'click', selector: `[data-task-id="${id}"]` },
+    { type: 'wait', delay: 400 },
+  ]
+}
+
 // ─── Main router ───
 
 export function queueVisualAction(toolName: string, input: Record<string, unknown>): Promise<void> {
@@ -224,19 +405,44 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
         // Don't click Send — this is a draft
       ])
 
+    case 'update_contact':
+      return queueAgentSteps(updateContactSteps(input))
+
+    case 'update_company':
+      return queueAgentSteps(updateCompanySteps(input))
+
+    case 'update_deal':
+      return queueAgentSteps(updateDealSteps(input))
+
+    case 'delete_contact':
+      return queueAgentSteps(deleteContactSteps(input))
+
+    case 'delete_company':
+      return queueAgentSteps(deleteCompanySteps(input))
+
+    case 'update_task':
+      return queueAgentSteps(updateTaskSteps(input))
+
     case 'complete_task':
       return queueAgentSteps([
         ...navTo('Tasks'),
+        { type: 'scroll-to', selector: `[data-task-id="${input.id}"]` },
+        { type: 'wait', delay: 300 },
         { type: 'click', selector: `[data-task-id="${input.id}"] button[role="checkbox"]` },
         { type: 'wait', delay: 400 },
       ])
 
     case 'move_deal_stage':
-      return queueAgentSteps([
-        ...navTo('Deals'),
-        { type: 'move', selector: `[data-deal-id="${input.id}"]` },
-        { type: 'wait', delay: 400 },
-      ])
+      return queueAgentSteps(moveDealStageSteps(input))
+
+    case 'reply_to_email':
+      return queueAgentSteps(replyToEmailSteps(input))
+
+    case 'update_settings':
+      return queueAgentSteps(updateSettingsSteps(input))
+
+    case 'invite_team_member':
+      return queueAgentSteps(inviteTeamMemberSteps(input))
 
     case 'get_deal':
     case 'get_contact':

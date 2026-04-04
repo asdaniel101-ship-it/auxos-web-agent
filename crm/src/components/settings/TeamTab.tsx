@@ -134,7 +134,7 @@ export function TeamTab() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleInvite}>Invite</Button>
+          <Button onClick={handleInvite} aria-label="Invite team member">Invite</Button>
         </CardContent>
       </Card>
     </div>

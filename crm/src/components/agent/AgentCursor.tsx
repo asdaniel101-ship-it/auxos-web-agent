@@ -11,7 +11,7 @@ interface CursorPosition {
 }
 
 interface AgentStep {
-  type: 'move' | 'click' | 'type' | 'wait' | 'scroll-to' | 'dismiss'
+  type: 'move' | 'click' | 'type' | 'wait' | 'scroll-to' | 'dismiss' | 'select-option'
   selector?: string
   text?: string
   delay?: number
@@ -219,6 +219,37 @@ export function AgentCursor() {
             break
           }
 
+          case 'select-option': {
+            // Click a [role="option"] whose text content matches step.text.
+            // Used for Radix Select dropdowns where options can't be targeted by CSS alone.
+            if (!step.text) break
+            const option = await waitForElementByText('[role="option"]', step.text, 3000)
+            if (!option || aborted) break
+            const inPortal = option.closest('[data-radix-popper-content-wrapper]') || option.closest('[role="listbox"]')
+            if (!inPortal) {
+              option.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+              await sleep(150)
+            }
+            const rect = option.getBoundingClientRect()
+            const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+            await sleep(dur + 80)
+            if (aborted) break
+            clickCountRef.current++
+            setPos((p) => ({ ...p, clicking: true }))
+            await sleep(180)
+            const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
+            const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
+            option.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
+            option.dispatchEvent(new MouseEvent('mousedown', center))
+            option.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
+            option.dispatchEvent(new MouseEvent('mouseup', center))
+            ;(option as HTMLElement).click()
+            await sleep(120)
+            setPos((p) => ({ ...p, clicking: false }))
+            await sleep(250)
+            break
+          }
+
           case 'dismiss': {
             const listbox = document.querySelector('[role="listbox"]')
             if (listbox) {
@@ -338,6 +369,34 @@ function waitForElement(selector: string, timeout: number): Promise<Element | nu
     const start = Date.now()
     const interval = setInterval(() => {
       const el = document.querySelector(selector)
+      if (el) {
+        clearInterval(interval)
+        resolve(el)
+      } else if (Date.now() - start > timeout) {
+        clearInterval(interval)
+        resolve(null)
+      }
+    }, 100)
+  })
+}
+
+/** Find an element matching `selector` whose trimmed textContent equals `text`. */
+function waitForElementByText(selector: string, text: string, timeout: number): Promise<Element | null> {
+  return new Promise((resolve) => {
+    function find() {
+      const els = Array.from(document.querySelectorAll(selector))
+      for (let i = 0; i < els.length; i++) {
+        if (els[i].textContent?.trim() === text) return els[i]
+      }
+      return null
+    }
+
+    const el = find()
+    if (el) return resolve(el)
+
+    const start = Date.now()
+    const interval = setInterval(() => {
+      const el = find()
       if (el) {
         clearInterval(interval)
         resolve(el)

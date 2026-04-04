@@ -94,7 +94,7 @@ export function ProfileTab() {
             </div>
           </div>
 
-          <Button onClick={handleSaveProfile}>Save Profile</Button>
+          <Button onClick={handleSaveProfile} aria-label="Save profile">Save Profile</Button>
         </CardContent>
       </Card>
 
