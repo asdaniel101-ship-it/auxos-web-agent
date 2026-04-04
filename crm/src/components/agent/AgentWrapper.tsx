@@ -1,16 +1,24 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { AuxosAgent } from '@auxos/agent'
 import { useRouter, usePathname } from 'next/navigation'
 import { useStore } from '@/store'
 import { getCrmTools } from '@/agent/client-tools'
+import { cancelAllSteps } from '@/components/agent/AgentCursor'
+import type { AuxosEvent } from '@auxos/agent'
 
 export function AgentWrapper() {
   const router = useRouter()
   const pathname = usePathname()
 
   const tools = useMemo(() => getCrmTools(), [])
+
+  const handleEvent = useCallback((event: AuxosEvent) => {
+    if (event.type === 'stopped') {
+      cancelAllSteps()
+    }
+  }, [])
 
   return (
     <AuxosAgent
@@ -26,6 +34,7 @@ export function AgentWrapper() {
         "Reassign all of Priya's tasks to Marcus",
       ]}
       onNavigate={(path) => router.push(path)}
+      onEvent={handleEvent}
       getContext={() => ({
         teamMembers: useStore.getState().teamMembers.map((m) => m.name),
         currentPage: pathname,
