@@ -30,6 +30,7 @@ export function AuxosAgent(config: AuxosConfig) {
   const isIdle = config.isIdle ?? false
   const idleMessage = config.idleMessage ?? ''
 
+  const isExecuting = config.executing ?? false
   const orbState: OrbState = isOpen ? 'active' : isIdle ? 'alert' : 'dormant'
 
   const updateOpen = useCallback((open: boolean) => {
@@ -37,24 +38,6 @@ export function AuxosAgent(config: AuxosConfig) {
     config.onOpenChange?.(open)
   }, [config.onOpenChange])
 
-  // Dismiss idle alert on click-anywhere or scroll
-  useEffect(() => {
-    if (!isIdle) return
-
-    function handleDismiss(e: Event) {
-      // Don't dismiss if clicking on the orb/bubble container
-      const target = e.target as HTMLElement
-      if (target.closest('[data-auxos-orb]')) return
-      config.onIdleDismiss?.()
-    }
-
-    window.addEventListener('click', handleDismiss)
-    window.addEventListener('scroll', handleDismiss, { once: true })
-    return () => {
-      window.removeEventListener('click', handleDismiss)
-      window.removeEventListener('scroll', handleDismiss)
-    }
-  }, [isIdle, config.onIdleDismiss])
 
   // Opens panel and sends the idle message after a short delay to let the panel mount
   const openWithIdleMessage = useCallback(() => {
@@ -80,7 +63,7 @@ export function AuxosAgent(config: AuxosConfig) {
   return (
     <>
       {/* Entry point: SiriOrb (CRM) or AgentButton (SolaGlow fallback) */}
-      {!isOpen && !minimized && (
+      {!isOpen && !isExecuting && !minimized && (
         useOrbMode ? (
           <div
             data-auxos-orb
@@ -99,10 +82,9 @@ export function AuxosAgent(config: AuxosConfig) {
             <div
               style={{
                 position: 'absolute',
-                right: '100%',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                marginRight: '10px',
+                bottom: '100%',
+                right: '0',
+                marginBottom: '10px',
                 background: theme.colors.glassBg,
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
@@ -118,7 +100,7 @@ export function AuxosAgent(config: AuxosConfig) {
                 pointerEvents: isOrbHovered && !isIdle ? 'auto' : 'none',
               }}
             >
-              {config.name ?? 'Auxos'}
+              Need help? Just ask!
             </div>
             <SpeechBubble
               message={idleMessage}
@@ -134,7 +116,7 @@ export function AuxosAgent(config: AuxosConfig) {
       )}
 
       <AgentPanel
-        isOpen={isOpen && !minimized}
+        isOpen={isOpen && !minimized && !isExecuting}
         onClose={() => updateOpen(false)}
         messages={messages}
         isLoading={isLoading}

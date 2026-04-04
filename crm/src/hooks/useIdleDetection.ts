@@ -26,8 +26,8 @@ const MESSAGES: Record<string, string> = {
   '/deals': 'I can update deal stages and info',
   '/tasks': 'I can help manage your tasks',
   '/emails': 'I can draft emails for you',
-  '/dashboard': 'I can summarize today\'s activity',
-  '/': 'I can summarize today\'s activity',
+  '/dashboard': 'Need help? Just ask!',
+  '/': 'Need help? Just ask!',
   '/reports': 'I can generate reports for you',
   '/settings': 'I can help with settings',
 }
@@ -64,10 +64,8 @@ export function useIdleDetection({
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
 
-    // If in cooldown or disabled, don't start a new timer
+    // If in cooldown, disabled, or already showing, don't restart
     if (cooldownRef.current || !enabled) return
-
-    setIsIdle((prev) => prev ? false : prev)
 
     timerRef.current = setTimeout(() => {
       setIsIdle(true)
@@ -107,14 +105,18 @@ export function useIdleDetection({
     }
   }, [enabled, resetTimer, clearAllTimers])
 
-  // Auto-dismiss: just hide the bubble without triggering cooldown
+
+  // Auto-dismiss after timeout, then restart idle timer
   useEffect(() => {
     if (!isIdle || autoDismiss <= 0) return
-    autoDismissTimerRef.current = setTimeout(() => setIsIdle(false), autoDismiss)
+    autoDismissTimerRef.current = setTimeout(() => {
+      setIsIdle(false)
+      resetTimer()
+    }, autoDismiss)
     return () => {
       if (autoDismissTimerRef.current) clearTimeout(autoDismissTimerRef.current)
     }
-  }, [isIdle, autoDismiss])
+  }, [isIdle, autoDismiss, resetTimer])
 
   // Reset on page navigation
   useEffect(() => {

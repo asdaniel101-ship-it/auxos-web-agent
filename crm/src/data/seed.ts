@@ -256,20 +256,59 @@ export function generateSeedData(): SeedData {
     [companyIds50[i], companyIds50[j]] = [companyIds50[j], companyIds50[i]]
   }
 
-  // Build a pool of unique full names (50)
-  const usedNames = new Set<string>()
-  const namePool: { first: string; last: string }[] = []
-  let attempts = 0
-  while (namePool.length < 50 && attempts < 10000) {
-    attempts++
-    const first = pick(rng, FIRST_NAMES)
-    const last = pick(rng, LAST_NAMES)
-    const key = `${first} ${last}`
-    if (!usedNames.has(key)) {
-      usedNames.add(key)
-      namePool.push({ first, last })
-    }
-  }
+  // Hardcoded contact names for demo reliability
+  const namePool: { first: string; last: string }[] = [
+    { first: 'Jamie', last: 'Torres' },
+    { first: 'Morgan', last: 'Nguyen' },
+    { first: 'Taylor', last: 'Kim' },
+    { first: 'Jordan', last: 'Patel' },
+    { first: 'Casey', last: 'Williams' },
+    { first: 'Riley', last: 'Brown' },
+    { first: 'Avery', last: 'Martinez' },
+    { first: 'Quinn', last: 'Garcia' },
+    { first: 'Blake', last: 'Lee' },
+    { first: 'Drew', last: 'Jackson' },
+    { first: 'Reese', last: 'Anderson' },
+    { first: 'Skyler', last: 'Thomas' },
+    { first: 'Harper', last: 'Jackson' },
+    { first: 'Peyton', last: 'White' },
+    { first: 'Kendall', last: 'Harris' },
+    { first: 'Logan', last: 'Martin' },
+    { first: 'Cameron', last: 'Thompson' },
+    { first: 'Sydney', last: 'Robinson' },
+    { first: 'Alex', last: 'Clark' },
+    { first: 'Devon', last: 'Lewis' },
+    { first: 'Rowan', last: 'Walker' },
+    { first: 'Finley', last: 'Hall' },
+    { first: 'Emerson', last: 'Allen' },
+    { first: 'Sage', last: 'Young' },
+    { first: 'River', last: 'Scott' },
+    { first: 'Parker', last: 'Adams' },
+    { first: 'Elliot', last: 'Nelson' },
+    { first: 'Remy', last: 'Baker' },
+    { first: 'Jamie', last: 'Garcia' },
+    { first: 'Morgan', last: 'Clark' },
+    { first: 'Taylor', last: 'Lewis' },
+    { first: 'Jordan', last: 'Walker' },
+    { first: 'Casey', last: 'Hall' },
+    { first: 'Riley', last: 'Allen' },
+    { first: 'Avery', last: 'Young' },
+    { first: 'Quinn', last: 'Scott' },
+    { first: 'Blake', last: 'Adams' },
+    { first: 'Skyler', last: 'Nelson' },
+    { first: 'Harper', last: 'Baker' },
+    { first: 'Peyton', last: 'Torres' },
+    { first: 'Kendall', last: 'Nguyen' },
+    { first: 'Logan', last: 'Kim' },
+    { first: 'Cameron', last: 'Patel' },
+    { first: 'Sydney', last: 'Williams' },
+    { first: 'Alex', last: 'Brown' },
+    { first: 'Devon', last: 'Martinez' },
+    { first: 'Rowan', last: 'Thomas' },
+    { first: 'Finley', last: 'White' },
+    { first: 'Emerson', last: 'Harris' },
+    { first: 'Sage', last: 'Martin' },
+  ]
 
   for (let i = 0; i < 50; i++) {
     const { first, last } = namePool[i]
@@ -343,6 +382,7 @@ export function generateSeedData(): SeedData {
     novaAnalyticsDeal.stage = 'Prospecting'
     novaAnalyticsDeal.probability = STAGE_PROBABILITY['Prospecting']
   }
+
 
   // -------------------------------------------------------------------------
   // Tasks (40)

@@ -5,20 +5,34 @@ import { create } from 'zustand'
 interface AgentUIStore {
   executing: boolean
   currentAction: string | null
+  pendingQuestion: string | null
+  respondFn: ((answer: string) => void) | null
 
   startExecution: () => void
   setCurrentAction: (label: string | null) => void
   finishExecution: () => void
+  askUser: (question: string, respond: (answer: string) => void) => void
+  answerQuestion: (answer: string) => void
 }
 
 function createAgentUIStore() {
-  return create<AgentUIStore>((set) => ({
+  return create<AgentUIStore>((set, get) => ({
     executing: false,
     currentAction: null,
+    pendingQuestion: null,
+    respondFn: null,
 
     startExecution: () => set({ executing: true, currentAction: null }),
     setCurrentAction: (label) => set({ currentAction: label }),
-    finishExecution: () => set({ executing: false, currentAction: null }),
+    finishExecution: () => set({ executing: false, currentAction: null, pendingQuestion: null, respondFn: null }),
+    askUser: (question, respond) => set({ pendingQuestion: question, respondFn: respond, currentAction: null }),
+    answerQuestion: (answer) => {
+      const { respondFn } = get()
+      if (respondFn) {
+        respondFn(answer)
+        set({ pendingQuestion: null, respondFn: null })
+      }
+    },
   }))
 }
 
@@ -68,6 +82,7 @@ const TOOL_LABELS: Record<string, string> = {
   get_email_thread: 'Loading email thread',
   generate_report: 'Generating report',
   bulk_update_contacts: 'Bulk updating contacts',
+  ask_user: 'Waiting for your input',
 }
 
 export function getToolLabel(toolName: string, input?: Record<string, unknown>): string {
