@@ -57,6 +57,16 @@ export function queueVisualAction(toolName: string, input: Record<string, unknow
         { type: 'wait', delay: 400 },
       ])
 
+    case 'draft_email':
+      return queueAgentSteps([
+        { type: 'click', selector: 'button[aria-label="Compose new email"]' },
+        { type: 'wait', delay: 600 },
+        { type: 'type', selector: 'input[aria-label="Recipient email address"]', text: (input.to as string) || '' },
+        { type: 'type', selector: 'input[aria-label="Email subject"]', text: (input.subject as string) || '' },
+        { type: 'type', selector: 'textarea[aria-label="Email body"]', text: ((input.body as string) || '').slice(0, 120) },
+        { type: 'wait', delay: 400 },
+      ])
+
     case 'navigate_to':
       return queueAgentSteps([
         { type: 'click', selector: `a[aria-label="Navigate to ${capitalize(input.page as string)}"]` },
