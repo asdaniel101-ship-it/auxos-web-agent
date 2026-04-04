@@ -10,7 +10,7 @@ interface CursorPosition {
 }
 
 interface AgentStep {
-  type: 'move' | 'click' | 'type' | 'wait' | 'scroll-to'
+  type: 'move' | 'click' | 'type' | 'wait' | 'scroll-to' | 'dismiss'
   selector?: string
   text?: string
   delay?: number
@@ -66,9 +66,10 @@ export function AgentCursor() {
         switch (step.type) {
           case 'scroll-to': {
             if (!step.selector) break
-            const el = document.querySelector(step.selector)
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            await sleep(400)
+            const el = await waitForElement(step.selector, 3000)
+            if (!el || aborted) break
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            await sleep(500)
             break
           }
 
@@ -86,6 +87,13 @@ export function AgentCursor() {
             if (!step.selector) break
             const el = await waitForElement(step.selector, 2000)
             if (!el || aborted) break
+            // Skip scroll for elements inside portals/dropdowns — scrolling
+            // an ancestor would cause Radix to close the popover.
+            const inPortal = el.closest('[data-radix-popper-content-wrapper]') || el.closest('[role="listbox"]')
+            if (!inPortal) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+              await sleep(300)
+            }
             const rect = el.getBoundingClientRect()
             // Move to element
             setPos((p) => ({ ...p, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, clicking: false }))
@@ -95,7 +103,14 @@ export function AgentCursor() {
             setPos((p) => ({ ...p, clicking: true }))
             await sleep(200)
             setPos((p) => ({ ...p, clicking: false }))
-            // Actually click
+            // Dispatch full pointer event sequence (Radix UI needs pointerdown/pointerup
+            // with pointerType: 'mouse' for Select item selection to trigger)
+            const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
+            const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
+            el.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
+            el.dispatchEvent(new MouseEvent('mousedown', center))
+            el.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
+            el.dispatchEvent(new MouseEvent('mouseup', center))
             ;(el as HTMLElement).click()
             await sleep(500)
             break
@@ -119,24 +134,29 @@ export function AgentCursor() {
             el.click()
             await sleep(200)
             if (aborted) break
-            // Type character by character
-            const nativeSetter =
-              Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set ||
-              Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
-            let currentValue = el.value || ''
-            for (const char of step.text) {
-              if (aborted) break
-              currentValue += char
-              if (nativeSetter) {
-                nativeSetter.call(el, currentValue)
-              } else {
-                el.value = currentValue
-              }
-              el.dispatchEvent(new Event('input', { bubbles: true }))
-              el.dispatchEvent(new Event('change', { bubbles: true }))
-              await sleep(40 + Math.random() * 50)
+            // Paste the full value at once
+            const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+            const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
+            const fullValue = (el.value || '') + step.text
+            if (nativeSetter) {
+              nativeSetter.call(el, fullValue)
+            } else {
+              el.value = fullValue
             }
+            el.dispatchEvent(new Event('input', { bubbles: true }))
+            el.dispatchEvent(new Event('change', { bubbles: true }))
             await sleep(300)
+            break
+          }
+
+          case 'dismiss': {
+            // Close any open dropdown/popover without closing the parent dialog.
+            // Dispatch Escape on the listbox so Radix's topmost layer handles it.
+            const listbox = document.querySelector('[role="listbox"]')
+            if (listbox) {
+              listbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+            }
+            await sleep(200)
             break
           }
 
@@ -158,6 +178,12 @@ export function AgentCursor() {
     setPos((p) => ({ ...p, visible: false }))
     processingRef.current = false
     aborted = false
+
+    // Items may have been queued during the hide-cursor sleep while
+    // processingRef was still true (event handler bailed early). Restart.
+    if (queue.length > 0) {
+      processQueue()
+    }
   }, [])
 
   useEffect(() => {

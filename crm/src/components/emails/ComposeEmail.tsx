@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useStore } from '@/store'
+import { generateId } from '@/lib/utils'
+import type { EmailDraft } from '@/store/slices/emails'
 import { useToast } from '@/components/ui/use-toast'
 import {
   Dialog,
@@ -25,15 +27,7 @@ import { Send } from 'lucide-react'
 
 const CURRENT_USER = 'Sarah Chen'
 
-interface FormData {
-  to: string
-  subject: string
-  body: string
-  linkedContactId: string
-  linkedDealId: string
-}
-
-const emptyForm: FormData = {
+const emptyForm: EmailDraft = {
   to: '',
   subject: '',
   body: '',
@@ -51,23 +45,14 @@ export function ComposeEmail() {
   const setComposeOpen = useStore((s) => s.setComposeOpen)
   const { toast } = useToast()
 
-  const [data, setData] = useState<FormData>(emptyForm)
+  const [data, setData] = useState<EmailDraft>(emptyForm)
   const [sending, setSending] = useState(false)
 
-  // When a draft arrives, populate the form
   useEffect(() => {
-    if (emailDraft) {
-      setData({
-        to: emailDraft.to,
-        subject: emailDraft.subject,
-        body: emailDraft.body,
-        linkedContactId: emailDraft.linkedContactId,
-        linkedDealId: emailDraft.linkedDealId,
-      })
-    }
+    if (emailDraft) setData({ ...emailDraft })
   }, [emailDraft])
 
-  function setField<K extends keyof FormData>(key: K, value: FormData[K]) {
+  function setField<K extends keyof EmailDraft>(key: K, value: EmailDraft[K]) {
     setData((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -95,7 +80,7 @@ export function ComposeEmail() {
       participants: [CURRENT_USER, toTrimmed],
       messages: [
         {
-          id: Math.random().toString(36).substring(2, 15),
+          id: generateId(),
           from: CURRENT_USER,
           to: toTrimmed,
           body: bodyTrimmed,
@@ -181,9 +166,9 @@ export function ComposeEmail() {
                 <SelectValue placeholder="None" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="none" data-value="none">None</SelectItem>
                 {contacts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
+                  <SelectItem key={c.id} value={c.id} data-value={c.id}>
                     {c.firstName} {c.lastName}
                   </SelectItem>
                 ))}
@@ -202,9 +187,9 @@ export function ComposeEmail() {
                 <SelectValue placeholder="None" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="none" data-value="none">None</SelectItem>
                 {deals.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
+                  <SelectItem key={d.id} value={d.id} data-value={d.id}>
                     {d.name}
                   </SelectItem>
                 ))}
