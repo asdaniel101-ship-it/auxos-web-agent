@@ -13,6 +13,7 @@ import {
   Mail,
   BarChart3,
   Settings,
+  HelpCircle,
 } from 'lucide-react'
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/emails', label: 'Emails', icon: Mail },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/help-center', label: 'Help Center', icon: HelpCircle },
 ]
 
 export function Sidebar() {
