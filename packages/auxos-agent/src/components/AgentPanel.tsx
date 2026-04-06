@@ -399,11 +399,11 @@ export function AgentPanel({
                 border: 'none',
                 fontFamily: theme.fonts.body,
                 resize: 'none',
-                lineHeight: '32px',
+                lineHeight: '20px',
                 height: '32px',
                 maxHeight: '120px',
                 overflow: 'auto',
-                padding: 0,
+                padding: '6px 0',
                 margin: 0,
               }}
             />
