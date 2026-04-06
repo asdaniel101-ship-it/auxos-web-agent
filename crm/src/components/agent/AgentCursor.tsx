@@ -26,7 +26,7 @@ type QueueItem = {
 /** Minimum move duration so very short moves don't look instant */
 const MIN_MOVE_MS = 200
 /** Constant speed: pixels per second */
-const MOVE_PX_PER_SEC = 1600
+const MOVE_PX_PER_SEC = 2080
 
 let aborted = false
 
@@ -97,16 +97,16 @@ export function AgentCursor() {
     processingRef.current = true
     aborted = false
 
-    // Always start from the chat button position (bottom-right corner)
-    const startX = window.innerWidth - 34
-    const startY = window.innerHeight - 34
+    // Start from the center of the command bar (offset by 240px sidebar)
+    const startX = 240 + (window.innerWidth - 240) / 2
+    const startY = window.innerHeight - 52
     lastPosRef.current = { x: startX, y: startY }
     setPos((p) => ({ ...p, x: startX, y: startY, moveDuration: 0 }))
 
     // Small delay so the opacity transition has a frame to start from
     await sleep(30)
     setPos((p) => ({ ...p, visible: true }))
-    await sleep(350) // let fade-in complete
+    await sleep(250) // let fade-in complete
 
     while (queue.length > 0) {
       if (aborted) break
@@ -120,7 +120,7 @@ export function AgentCursor() {
             const el = await waitForElement(step.selector, 3000)
             if (!el || aborted) break
             el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            await sleep(500)
+            await sleep(350)
             break
           }
 
@@ -129,10 +129,10 @@ export function AgentCursor() {
             const el = await waitForElement(step.selector, 2500)
             if (!el || aborted) break
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-            await sleep(150)
+            await sleep(100)
             const rect = el.getBoundingClientRect()
             const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-            await sleep(dur + 80)
+            await sleep(dur + 50)
             break
           }
 
@@ -146,16 +146,16 @@ export function AgentCursor() {
             const inPortal = el.closest('[data-radix-popper-content-wrapper]') || el.closest('[role="listbox"]')
             if (!inPortal) {
               el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              await sleep(150)
+              await sleep(100)
             }
             const rect = el.getBoundingClientRect()
             const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-            await sleep(dur + 80)
+            await sleep(dur + 50)
             if (aborted) break
             // Click animation
             clickCountRef.current++
             setPos((p) => ({ ...p, clicking: true }))
-            await sleep(180)
+            await sleep(130)
             // Dispatch full pointer event sequence (Radix UI needs this)
             const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
             const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
@@ -175,9 +175,9 @@ export function AgentCursor() {
               }
             }
 
-            await sleep(120)
+            await sleep(80)
             setPos((p) => ({ ...p, clicking: false }))
-            await sleep(250)
+            await sleep(170)
             break
           }
 
@@ -187,19 +187,19 @@ export function AgentCursor() {
             if (!el || aborted) break
             useAgentUIStore.getState().setCurrentAction(getTypeLabel(el))
             el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            await sleep(200)
+            await sleep(140)
             const rect = el.getBoundingClientRect()
             // Move to field
             const dur = moveTo(rect.left + 40, rect.top + rect.height / 2)
-            await sleep(dur + 80)
+            await sleep(dur + 50)
             // Click to focus
             clickCountRef.current++
             setPos((p) => ({ ...p, clicking: true }))
-            await sleep(150)
+            await sleep(100)
             setPos((p) => ({ ...p, clicking: false }))
             el.focus()
             el.click()
-            await sleep(180)
+            await sleep(130)
             if (aborted) break
             // Paste the full value at once
             const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
@@ -212,7 +212,7 @@ export function AgentCursor() {
             }
             el.dispatchEvent(new Event('input', { bubbles: true }))
             el.dispatchEvent(new Event('change', { bubbles: true }))
-            await sleep(150)
+            await sleep(100)
             break
           }
 
@@ -224,15 +224,15 @@ export function AgentCursor() {
             const inPortal = option.closest('[data-radix-popper-content-wrapper]') || option.closest('[role="listbox"]')
             if (!inPortal) {
               option.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              await sleep(150)
+              await sleep(100)
             }
             const rect = option.getBoundingClientRect()
             const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-            await sleep(dur + 80)
+            await sleep(dur + 50)
             if (aborted) break
             clickCountRef.current++
             setPos((p) => ({ ...p, clicking: true }))
-            await sleep(180)
+            await sleep(130)
             const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
             const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
             option.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
@@ -240,9 +240,9 @@ export function AgentCursor() {
             option.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
             option.dispatchEvent(new MouseEvent('mouseup', center))
             ;(option as HTMLElement).click()
-            await sleep(120)
+            await sleep(80)
             setPos((p) => ({ ...p, clicking: false }))
-            await sleep(250)
+            await sleep(170)
             break
           }
 
@@ -251,12 +251,12 @@ export function AgentCursor() {
             if (listbox) {
               listbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
             }
-            await sleep(200)
+            await sleep(140)
             break
           }
 
           case 'wait': {
-            await sleep(step.delay || 500)
+            await sleep(step.delay || 350)
             break
           }
         }
@@ -267,13 +267,13 @@ export function AgentCursor() {
 
       // If more items are queued, add a brief inter-tool pause
       if (queue.length > 0) {
-        await sleep(300)
+        await sleep(200)
       }
     }
 
     // Fade out gracefully
     if (!aborted) {
-      await sleep(400)
+      await sleep(280)
     }
     setPos((p) => ({ ...p, visible: false }))
     await sleep(400)

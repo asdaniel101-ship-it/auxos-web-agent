@@ -9,8 +9,9 @@ import { useAgent } from '../hooks/useAgent'
 import { createTheme } from '../theme'
 import type { AuxosConfig } from '../types'
 import type { OrbState } from './SiriOrb'
+import type { ActionStep } from './AgentPanel'
 
-export function AuxosAgent(config: AuxosConfig) {
+export function AuxosAgent(config: AuxosConfig & { actionHistory?: ActionStep[] }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isOrbHovered, setIsOrbHovered] = useState(false)
   const theme = useMemo(() => createTheme(config.theme || {}), [config.theme])
@@ -38,7 +39,6 @@ export function AuxosAgent(config: AuxosConfig) {
     config.onOpenChange?.(open)
   }, [config.onOpenChange])
 
-
   // Opens panel and sends the idle message after a short delay to let the panel mount
   const openWithIdleMessage = useCallback(() => {
     config.onIdleDismiss?.()
@@ -58,12 +58,38 @@ export function AuxosAgent(config: AuxosConfig) {
     }
   }, [isOpen, isIdle, idleMessage, openWithIdleMessage, updateOpen])
 
+  // Global Esc key handler
+  useEffect(() => {
+    if (!isOpen) return
+    function handleEsc(e: globalThis.KeyboardEvent) {
+      if (e.key === 'Escape') {
+        updateOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [isOpen, updateOpen])
+
   const minimized = config.minimized ?? false
 
   return (
     <>
+      {/* Scrim — subtle overlay when command bar is open */}
+      {isOpen && !minimized && (
+        <div
+          onClick={() => updateOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 49,
+            background: 'rgba(0, 0, 0, 0.04)',
+            pointerEvents: 'auto',
+          }}
+        />
+      )}
+
       {/* Entry point: SiriOrb (CRM) or AgentButton (SolaGlow fallback) */}
-      {!isOpen && !isExecuting && !minimized && (
+      {!isOpen && !minimized && (
         useOrbMode ? (
           <div
             data-auxos-orb
@@ -116,7 +142,7 @@ export function AuxosAgent(config: AuxosConfig) {
       )}
 
       <AgentPanel
-        isOpen={isOpen && !minimized && !isExecuting}
+        isOpen={isOpen && !minimized}
         onClose={() => updateOpen(false)}
         messages={messages}
         isLoading={isLoading}
@@ -124,9 +150,8 @@ export function AuxosAgent(config: AuxosConfig) {
         onSend={send}
         onStop={stop}
         name={config.name}
-        tagline={config.tagline}
-        suggestions={config.suggestions}
         theme={theme}
+        actionHistory={config.actionHistory}
       />
     </>
   )

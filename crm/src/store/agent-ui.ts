@@ -2,17 +2,27 @@
 
 import { create } from 'zustand'
 
+export interface ActionStep {
+  label: string
+  status: 'active' | 'completed'
+}
+
 interface AgentUIStore {
   executing: boolean
   currentAction: string | null
   pendingQuestion: string | null
   respondFn: ((answer: string) => void) | null
+  panelOpen: boolean
+  actionHistory: ActionStep[]
 
   startExecution: () => void
   setCurrentAction: (label: string | null) => void
+  completeCurrentAction: () => void
   finishExecution: () => void
   askUser: (question: string, respond: (answer: string) => void) => void
   answerQuestion: (answer: string) => void
+  setPanelOpen: (open: boolean) => void
+  clearActionHistory: () => void
 }
 
 function createAgentUIStore() {
@@ -21,10 +31,42 @@ function createAgentUIStore() {
     currentAction: null,
     pendingQuestion: null,
     respondFn: null,
+    panelOpen: false,
+    actionHistory: [],
 
-    startExecution: () => set({ executing: true, currentAction: null }),
-    setCurrentAction: (label) => set({ currentAction: label }),
-    finishExecution: () => set({ executing: false, currentAction: null, pendingQuestion: null, respondFn: null }),
+    startExecution: () => set({ executing: true, currentAction: null, actionHistory: [] }),
+    setCurrentAction: (label) => {
+      const { actionHistory } = get()
+      // Mark previous active step as completed, add new active step
+      const updated = actionHistory.map((s) =>
+        s.status === 'active' ? { ...s, status: 'completed' as const } : s
+      )
+      if (label) {
+        updated.push({ label, status: 'active' })
+      }
+      set({ currentAction: label, actionHistory: updated })
+    },
+    completeCurrentAction: () => {
+      const { actionHistory } = get()
+      set({
+        actionHistory: actionHistory.map((s) =>
+          s.status === 'active' ? { ...s, status: 'completed' as const } : s
+        ),
+      })
+    },
+    finishExecution: () => {
+      const { actionHistory } = get()
+      // Mark any remaining active steps as completed
+      set({
+        executing: false,
+        currentAction: null,
+        pendingQuestion: null,
+        respondFn: null,
+        actionHistory: actionHistory.map((s) =>
+          s.status === 'active' ? { ...s, status: 'completed' as const } : s
+        ),
+      })
+    },
     askUser: (question, respond) => set({ pendingQuestion: question, respondFn: respond, currentAction: null }),
     answerQuestion: (answer) => {
       const { respondFn } = get()
@@ -33,6 +75,8 @@ function createAgentUIStore() {
         set({ pendingQuestion: null, respondFn: null })
       }
     },
+    setPanelOpen: (open) => set({ panelOpen: open }),
+    clearActionHistory: () => set({ actionHistory: [] }),
   }))
 }
 
