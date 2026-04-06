@@ -371,10 +371,14 @@ export function AgentCursor() {
   )
 }
 
-/** Derive a human-readable label from a clicked element's aria-label or text. */
+/** Derive a human-readable label from a clicked element's aria-label or text.
+ *  Returns null for sidebar nav links — the tool-level label already covers navigation. */
 function getClickLabel(el: Element): string | null {
   const ariaLabel = el.getAttribute('aria-label')
-  if (ariaLabel) return ariaLabel
+  if (ariaLabel) {
+    if (/^Navigate to /i.test(ariaLabel)) return null
+    return ariaLabel
+  }
   const text = el.textContent?.trim()
   if (text && text.length < 40) return text
   return null

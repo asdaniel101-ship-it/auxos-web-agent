@@ -25,6 +25,8 @@ interface AgentUIStore {
   clearActionHistory: () => void
 }
 
+let finishTimer: ReturnType<typeof setTimeout> | null = null
+
 function createAgentUIStore() {
   return create<AgentUIStore>((set, get) => ({
     executing: false,
@@ -34,7 +36,10 @@ function createAgentUIStore() {
     panelOpen: false,
     actionHistory: [],
 
-    startExecution: () => set({ executing: true, currentAction: null, actionHistory: [] }),
+    startExecution: () => {
+      if (finishTimer) { clearTimeout(finishTimer); finishTimer = null }
+      set({ executing: true, currentAction: null, actionHistory: [] })
+    },
     setCurrentAction: (label) => {
       const { actionHistory } = get()
       // Mark previous active step as completed, add new active step
@@ -55,17 +60,20 @@ function createAgentUIStore() {
       })
     },
     finishExecution: () => {
-      const { actionHistory } = get()
-      // Mark any remaining active steps as completed
-      set({
-        executing: false,
-        currentAction: null,
-        pendingQuestion: null,
-        respondFn: null,
-        actionHistory: actionHistory.map((s) =>
-          s.status === 'active' ? { ...s, status: 'completed' as const } : s
-        ),
-      })
+      if (finishTimer) clearTimeout(finishTimer)
+      finishTimer = setTimeout(() => {
+        finishTimer = null
+        const { actionHistory } = get()
+        set({
+          executing: false,
+          currentAction: null,
+          pendingQuestion: null,
+          respondFn: null,
+          actionHistory: actionHistory.map((s) =>
+            s.status === 'active' ? { ...s, status: 'completed' as const } : s
+          ),
+        })
+      }, 600)
     },
     askUser: (question, respond) => set({ pendingQuestion: question, respondFn: respond, currentAction: null }),
     answerQuestion: (answer) => {
