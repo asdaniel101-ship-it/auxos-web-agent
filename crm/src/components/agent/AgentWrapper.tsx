@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useCallback } from 'react'
 import { AuxosAgent } from '@auxos/agent'
 import { useRouter, usePathname } from 'next/navigation'
 import { useStore } from '@/store'
@@ -87,9 +87,11 @@ function getPageContext(pathname: string, state: CrmStore): string | null {
 export function AgentWrapper() {
   const router = useRouter()
   const pathname = usePathname()
-  const [panelOpen, setPanelOpen] = useState(false)
 
   const tools = useMemo(() => getCrmTools(), [])
+
+  const panelOpen = useAgentUIStore((s) => s.panelOpen)
+  const setPanelOpen = useAgentUIStore((s) => s.setPanelOpen)
 
   const { isIdle, idleMessage, dismiss } = useIdleDetection({
     timeout: 15000,
@@ -98,6 +100,7 @@ export function AgentWrapper() {
   })
 
   const executing = useAgentUIStore((s) => s.executing)
+  const actionHistory = useAgentUIStore((s) => s.actionHistory)
 
   const handleEvent = useCallback((event: AuxosEvent) => {
     const { executing: isExec, startExecution, setCurrentAction, finishExecution, askUser } = useAgentUIStore.getState()
@@ -174,6 +177,7 @@ export function AgentWrapper() {
       onIdleDismiss={dismiss}
       onOpenChange={setPanelOpen}
       executing={executing}
+      actionHistory={actionHistory}
     />
   )
 }

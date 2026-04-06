@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 type ViewMode = 'kanban' | 'list'
 
 export default function DealsPage() {
-  const [view, setView] = useState<ViewMode>('list')
+  const [view, setView] = useState<ViewMode>('kanban')
   const [formOpen, setFormOpen] = useState(false)
 
   return (
@@ -23,22 +23,6 @@ export default function DealsPage() {
         <div className="flex items-center gap-3">
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5" role="group" aria-label="View mode">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setView('list')}
-              aria-label="List view"
-              aria-pressed={view === 'list'}
-              className={cn(
-                'h-7 px-3 rounded-md transition-colors',
-                view === 'list'
-                  ? 'bg-white shadow-sm text-slate-900'
-                  : 'text-slate-500 hover:text-slate-700'
-              )}
-            >
-              <List className="h-4 w-4 mr-1.5" />
-              List
-            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -54,6 +38,22 @@ export default function DealsPage() {
             >
               <LayoutGrid className="h-4 w-4 mr-1.5" />
               Kanban
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setView('list')}
+              aria-label="List view"
+              aria-pressed={view === 'list'}
+              className={cn(
+                'h-7 px-3 rounded-md transition-colors',
+                view === 'list'
+                  ? 'bg-white shadow-sm text-slate-900'
+                  : 'text-slate-500 hover:text-slate-700'
+              )}
+            >
+              <List className="h-4 w-4 mr-1.5" />
+              List
             </Button>
           </div>
 

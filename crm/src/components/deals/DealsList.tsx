@@ -74,7 +74,7 @@ export function DealsList() {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
+      {/* Filters + view toggle */}
       <div className="flex flex-wrap items-end gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
         {/* Stage filter */}
         <div className="space-y-1">
@@ -142,56 +142,55 @@ export function DealsList() {
       {/* Results count */}
       <p className="text-xs text-slate-500">{filtered.length} deal{filtered.length !== 1 ? 's' : ''}</p>
 
-      {/* Table */}
       <div className="rounded-lg border border-slate-200 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-slate-50">
-              <TableHead className="font-semibold text-slate-700">Deal Name</TableHead>
-              <TableHead className="font-semibold text-slate-700">Company</TableHead>
-              <TableHead className="font-semibold text-slate-700">Value</TableHead>
-              <TableHead className="font-semibold text-slate-700">Stage</TableHead>
-              <TableHead className="font-semibold text-slate-700">Owner</TableHead>
-              <TableHead className="font-semibold text-slate-700">Close Date</TableHead>
-              <TableHead className="font-semibold text-slate-700">Probability</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-slate-400 py-10">
-                  No deals found.
-                </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50">
+                <TableHead className="font-semibold text-slate-700">Deal Name</TableHead>
+                <TableHead className="font-semibold text-slate-700">Company</TableHead>
+                <TableHead className="font-semibold text-slate-700">Value</TableHead>
+                <TableHead className="font-semibold text-slate-700">Stage</TableHead>
+                <TableHead className="font-semibold text-slate-700">Owner</TableHead>
+                <TableHead className="font-semibold text-slate-700">Close Date</TableHead>
+                <TableHead className="font-semibold text-slate-700">Probability</TableHead>
               </TableRow>
-            )}
-            {filtered.map((deal) => (
-              <TableRow
-                key={deal.id}
-                data-deal-id={deal.id}
-                className="cursor-pointer hover:bg-slate-50 transition-colors"
-                onClick={() => router.push(`/deals/${deal.id}`)}
-                aria-label={`View deal ${deal.name}`}
-              >
-                <TableCell className="font-medium text-slate-900">{deal.name}</TableCell>
-                <TableCell className="text-slate-600">{getCompanyName(deal.companyId)}</TableCell>
-                <TableCell className="text-slate-700 font-semibold">{formatCurrency(deal.value)}</TableCell>
-                <TableCell>
-                  <Badge className={STAGE_BADGE_COLORS[deal.stage]} variant="outline">
-                    {deal.stage}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-slate-600">{deal.owner || '—'}</TableCell>
-                <TableCell className="text-slate-600">
-                  {deal.closeDate ? formatDate(deal.closeDate) : '—'}
-                </TableCell>
-                <TableCell className="text-slate-600">
-                  {deal.probability != null ? `${deal.probability}%` : '—'}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-slate-400 py-10">
+                    No deals found.
+                  </TableCell>
+                </TableRow>
+              )}
+              {filtered.map((deal) => (
+                <TableRow
+                  key={deal.id}
+                  data-deal-id={deal.id}
+                  className="cursor-pointer hover:bg-slate-50 transition-colors"
+                  onClick={() => router.push(`/deals/${deal.id}`)}
+                  aria-label={`View deal ${deal.name}`}
+                >
+                  <TableCell className="font-medium text-slate-900">{deal.name}</TableCell>
+                  <TableCell className="text-slate-600">{getCompanyName(deal.companyId)}</TableCell>
+                  <TableCell className="text-slate-700 font-semibold">{formatCurrency(deal.value)}</TableCell>
+                  <TableCell>
+                    <Badge className={STAGE_BADGE_COLORS[deal.stage]} variant="outline">
+                      {deal.stage}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-slate-600">{deal.owner || '—'}</TableCell>
+                  <TableCell className="text-slate-600">
+                    {deal.closeDate ? formatDate(deal.closeDate) : '—'}
+                  </TableCell>
+                  <TableCell className="text-slate-600">
+                    {deal.probability != null ? `${deal.probability}%` : '—'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
     </div>
   )
 }

@@ -15,7 +15,8 @@
     "react-dom": "^18 || ^19"
   },
   "dependencies": {
-    "lucide-react": "^1.7.0"
+    "lucide-react": "^1.7.0",
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@types/react": "^18",
