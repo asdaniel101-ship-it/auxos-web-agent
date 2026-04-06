@@ -10,7 +10,7 @@
   "scripts": {
     "dev:crm": "npm run dev --workspace=crm",
     "dev:solaglow": "npm run dev --workspace=solaglow",
-    "dev": "npm run dev:crm & npm run dev:solaglow",
+    "dev": "npm run dev:crm",
     "build:crm": "npm run build --workspace=crm",
     "build:solaglow": "npm run build --workspace=solaglow",
     "build": "npm run build:crm && npm run build:solaglow"
