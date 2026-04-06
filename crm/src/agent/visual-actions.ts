@@ -109,8 +109,28 @@ function createContactSteps(input: Record<string, unknown>): Step[] {
   const email = (input.email as string) || ''
   const phone = (input.phone as string) || ''
   const title = (input.title as string) || ''
+  const notes = (input.notes as string) || ''
+  const owner = (input.owner as string) || ''
+  const status = (input.status as string) || ''
 
-  return [
+  // Resolve company name to display text for the select dropdown
+  let companyName = ''
+  const companyId = (input.companyId as string) || ''
+  const inputCompanyName = (input.companyName as string) || ''
+  if (companyId || inputCompanyName) {
+    const state = useStore.getState()
+    if (companyId) {
+      const company = state.companies.find((c) => c.id === companyId)
+      if (company) companyName = company.name
+    } else if (inputCompanyName) {
+      const existing = state.companies.find(
+        (c) => c.name.toLowerCase() === inputCompanyName.toLowerCase()
+      )
+      companyName = existing ? existing.name : inputCompanyName
+    }
+  }
+
+  const steps: Step[] = [
     // Navigate to Contacts
     ...navTo('Contacts'),
     // Open form
@@ -122,12 +142,58 @@ function createContactSteps(input: Record<string, unknown>): Step[] {
     { type: 'type', selector: '#cf-email', text: email },
     ...(phone ? [{ type: 'type' as const, selector: '#cf-phone', text: phone }] : []),
     ...(title ? [{ type: 'type' as const, selector: '#cf-title', text: title }] : []),
-    // Advance through Steps 1 (Company), 2 (Notes), 3 (Assign)
-    ...advanceWizard(3),
-    // Submit
+    // Advance to Step 1: Company
+    ...advanceWizard(1),
+  ]
+
+  // Step 1: Select company if provided
+  if (companyName) {
+    steps.push(
+      { type: 'click', selector: '#cf-company' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: companyName },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  // Advance to Step 2: Notes
+  steps.push(...advanceWizard(1))
+
+  // Step 2: Fill notes if provided
+  if (notes) {
+    steps.push({ type: 'type', selector: '#cf-notes', text: notes })
+  }
+
+  // Advance to Step 3: Assign
+  steps.push(...advanceWizard(1))
+
+  // Step 3: Select owner if provided
+  if (owner) {
+    steps.push(
+      { type: 'click', selector: '#cf-owner' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: owner },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  // Step 3: Select status if provided (and not the default 'lead')
+  if (status && status !== 'lead') {
+    steps.push(
+      { type: 'click', selector: '#cf-status' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: capitalize(status) },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  // Submit
+  steps.push(
     { type: 'click', selector: 'button[aria-label="Submit contact form"]' },
     { type: 'wait', delay: 600 },
-  ]
+  )
+
+  return steps
 }
 
 function createCompanySteps(input: Record<string, unknown>): Step[] {
@@ -147,20 +213,95 @@ function createCompanySteps(input: Record<string, unknown>): Step[] {
 function createDealSteps(input: Record<string, unknown>): Step[] {
   const name = (input.name as string) || ''
   const value = String((input.value as number) || 0)
+  const stage = (input.stage as string) || ''
+  const owner = (input.owner as string) || ''
+  const closeDate = (input.closeDate as string) || ''
+  const probability = input.probability != null ? String(input.probability) : ''
 
-  return [
+  // Resolve company name for the select dropdown
+  let companyName = ''
+  const companyId = (input.companyId as string) || ''
+  const inputCompanyName = (input.companyName as string) || ''
+  if (companyId || inputCompanyName) {
+    const state = useStore.getState()
+    if (companyId) {
+      const company = state.companies.find((c) => c.id === companyId)
+      if (company) companyName = company.name
+    } else if (inputCompanyName) {
+      const existing = state.companies.find(
+        (c) => c.name.toLowerCase() === inputCompanyName.toLowerCase()
+      )
+      companyName = existing ? existing.name : inputCompanyName
+    }
+  }
+
+  const steps: Step[] = [
     ...navTo('Deals'),
     { type: 'click', selector: 'button[aria-label="Add new deal"]' },
     { type: 'wait', delay: 600 },
     // Step 0: Name & Value
     { type: 'type', selector: '#df-name', text: name },
     { type: 'type', selector: '#df-value', text: value },
-    // Advance through Steps 1-4 (Company, Contacts, Stage, Owner)
-    ...advanceWizard(4),
-    // Submit
+    // Advance to Step 1: Company
+    ...advanceWizard(1),
+  ]
+
+  // Step 1: Select company if provided
+  if (companyName) {
+    steps.push(
+      { type: 'click', selector: '#df-company' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: companyName },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  // Advance to Step 2: Contacts (skip — multi-select checkboxes, not a dropdown)
+  steps.push(...advanceWizard(1))
+
+  // Advance to Step 3: Stage & Date
+  steps.push(...advanceWizard(1))
+
+  // Step 3: Select stage if provided
+  if (stage) {
+    steps.push(
+      { type: 'click', selector: '#df-stage' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: stage },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  // Step 3: Fill close date if provided
+  if (closeDate) {
+    steps.push({ type: 'type', selector: '#df-close', text: closeDate })
+  }
+
+  // Step 3: Fill probability if provided
+  if (probability) {
+    steps.push({ type: 'type', selector: '#df-prob', text: probability })
+  }
+
+  // Advance to Step 4: Owner
+  steps.push(...advanceWizard(1))
+
+  // Step 4: Select owner if provided
+  if (owner) {
+    steps.push(
+      { type: 'click', selector: '#df-owner' },
+      { type: 'wait', delay: 300 },
+      { type: 'select-option', text: owner },
+      { type: 'wait', delay: 400 },
+    )
+  }
+
+  // Submit
+  steps.push(
     { type: 'click', selector: 'button[aria-label="Create deal"]' },
     { type: 'wait', delay: 600 },
-  ]
+  )
+
+  return steps
 }
 
 function createTaskSteps(input: Record<string, unknown>): Step[] {
