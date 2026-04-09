@@ -140,7 +140,15 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
 
   async function parseStream(
     response: Response,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    callbacks?: {
+      /** When true, text deltas are NOT pushed to React state during streaming.
+       *  Text is only flushed via the onFinalResponse callback. */
+      suppressStreaming?: boolean
+      /** Called during parseStream when message_delta confirms stop_reason='end_turn'
+       *  and no tool_use blocks were detected — i.e. this IS the final response. */
+      onFinalResponse?: (text: string) => void
+    }
   ): Promise<{ text: string; assistantContent: any[]; stopReason: string }> {
     const reader = response.body!.getReader()
     const decoder = new TextDecoder()
@@ -194,7 +202,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
                 (b: any, i: number) => i === currentBlockIndex && b.type === 'text'
               )
               if (textBlock) textBlock.text += event.delta.text
-              setStreamingText(text)
+              if (!callbacks?.suppressStreaming) setStreamingText(text)
               emit({ type: 'response_text', text: event.delta.text })
             } else if (event.delta?.type === 'input_json_delta' && event.delta.partial_json) {
               toolInputJson += event.delta.partial_json
@@ -215,6 +223,15 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           } else if (event.type === 'message_delta') {
             if (event.delta?.stop_reason) {
               stopReason = event.delta.stop_reason
+              // When end_turn with no tool_use blocks → this is the final response.
+              // Flush accumulated text so the UI can display it.
+              if (
+                stopReason === 'end_turn' &&
+                !assistantContent.some((b: any) => b.type === 'tool_use') &&
+                callbacks?.onFinalResponse
+              ) {
+                callbacks.onFinalResponse(text)
+              }
             }
           } else if (event.type === 'final_message') {
             // Use the final message as authoritative
@@ -261,6 +278,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
       let finalText = ''
       let toolMessages: DisplayMessage[] = []
       let iterations = 0
+      let toolsExecuted = false
 
       const controller = new AbortController()
       abortRef.current = controller
@@ -299,8 +317,15 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           const contentType = response.headers.get('content-type') || ''
 
           if (contentType.includes('text/event-stream')) {
-            // Streaming response
-            const parsed = await parseStream(response, signal)
+            // When tools already ran, suppress streaming text during intermediate
+            // responses and only flush when message_delta confirms end_turn.
+            const parsed = await parseStream(response, signal, toolsExecuted ? {
+              suppressStreaming: true,
+              onFinalResponse: (finalText) => {
+                emit({ type: 'tools_done' })
+                setStreamingText(finalText)
+              },
+            } : undefined)
             textContent = parsed.text
             assistantContent = parsed.assistantContent
             stopReason = parsed.stopReason
@@ -317,11 +342,11 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           }
 
           finalText = textContent
-          setStreamingText('')
 
           const toolUseBlocks = assistantContent.filter((b: any) => b.type === 'tool_use')
 
           if (toolUseBlocks.length === 0 || stopReason === 'end_turn') {
+            if (textContent) setStreamingText(textContent)
             currentMessages = [
               ...currentMessages,
               { role: 'assistant', content: assistantContent },
@@ -329,6 +354,9 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
             emit({ type: 'response_end' })
             break
           }
+
+          // More tools to execute — clear streaming text
+          setStreamingText('')
 
           // Execute tools and build visibility messages
           const toolResults: any[] = []
@@ -387,6 +415,8 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
               content: JSON.stringify(result),
             })
           }
+
+          toolsExecuted = true
 
           // Preserve intermediate reasoning text before tool calls
           if (textContent.trim()) {

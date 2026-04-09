@@ -91,184 +91,218 @@ export function AgentCursor() {
     return duration
   }
 
+  /** Wait until new queue items arrive or execution ends. Returns true if items are available. */
+  function waitForMoreWork(): Promise<boolean> {
+    return new Promise((resolve) => {
+      let settled = false
+      function done(result: boolean) {
+        if (settled) return
+        settled = true
+        window.removeEventListener('agent-steps-queued', onQueued)
+        unsub()
+        clearTimeout(timer)
+        resolve(result)
+      }
+      const onQueued = () => done(true)
+      window.addEventListener('agent-steps-queued', onQueued)
+      const unsub = useAgentUIStore.subscribe((s) => { if (!s.executing || s.toolsDone) done(false) })
+      // Safety timeout — don't wait forever
+      const timer = setTimeout(() => done(false), 5000)
+      // Check immediately in case items arrived during the gap
+      if (getQueue().length > 0) done(true)
+    })
+  }
+
+  async function runStep(step: AgentStep) {
+    switch (step.type) {
+      case 'scroll-to': {
+        if (!step.selector) break
+        const el = await waitForElement(step.selector, 3000)
+        if (!el || aborted) break
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        await sleep(350)
+        break
+      }
+
+      case 'move': {
+        if (!step.selector) break
+        const el = await waitForElement(step.selector, 2500)
+        if (!el || aborted) break
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        await sleep(100)
+        const rect = el.getBoundingClientRect()
+        const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        await sleep(dur + 50)
+        break
+      }
+
+      case 'click': {
+        if (!step.selector) break
+        const el = await waitForElement(step.selector, 2500)
+        if (!el || aborted) break
+        const clickLabel = getClickLabel(el)
+        if (clickLabel) useAgentUIStore.getState().setCurrentAction(clickLabel)
+        // Skip scroll for elements inside portals/dropdowns
+        const inPortal = el.closest('[data-radix-popper-content-wrapper]') || el.closest('[role="listbox"]')
+        if (!inPortal) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          await sleep(100)
+        }
+        const rect = el.getBoundingClientRect()
+        const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        await sleep(dur + 50)
+        if (aborted) break
+        // Click animation
+        clickCountRef.current++
+        setPos((p) => ({ ...p, clicking: true }))
+        await sleep(130)
+        // Dispatch full pointer event sequence (Radix UI needs this)
+        const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
+        const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
+        el.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
+        el.dispatchEvent(new MouseEvent('mousedown', center))
+        el.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
+        el.dispatchEvent(new MouseEvent('mouseup', center))
+        ;(el as HTMLElement).click()
+
+        // Handle form submit buttons (type="submit" inside a <form>).
+        if (el instanceof HTMLButtonElement && el.type === 'submit') {
+          const form = el.closest('form')
+          if (form) {
+            form.requestSubmit(el)
+          }
+        }
+
+        await sleep(80)
+        setPos((p) => ({ ...p, clicking: false }))
+        await sleep(170)
+        break
+      }
+
+      case 'type': {
+        if (!step.selector || !step.text) break
+        const el = await waitForElement(step.selector, 3000) as HTMLInputElement | HTMLTextAreaElement | null
+        if (!el || aborted) break
+        useAgentUIStore.getState().setCurrentAction(getTypeLabel(el))
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        await sleep(140)
+        const rect = el.getBoundingClientRect()
+        const dur = moveTo(rect.left + 40, rect.top + rect.height / 2)
+        await sleep(dur + 50)
+        clickCountRef.current++
+        setPos((p) => ({ ...p, clicking: true }))
+        await sleep(100)
+        setPos((p) => ({ ...p, clicking: false }))
+        el.focus()
+        el.click()
+        await sleep(130)
+        if (aborted) break
+        const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+        const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
+        const newValue = (el.value || '') + step.text
+        if (nativeSetter) {
+          nativeSetter.call(el, newValue)
+        } else {
+          el.value = newValue
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+        el.dispatchEvent(new Event('change', { bubbles: true }))
+        await sleep(100)
+        break
+      }
+
+      case 'select-option': {
+        if (!step.text) break
+        useAgentUIStore.getState().setCurrentAction(`Selecting ${step.text}`)
+        const option = await waitForElementByText('[role="option"]', step.text, 3000)
+        if (!option || aborted) break
+        const inPortal = option.closest('[data-radix-popper-content-wrapper]') || option.closest('[role="listbox"]')
+        if (!inPortal) {
+          option.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          await sleep(100)
+        }
+        const rect = option.getBoundingClientRect()
+        const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        await sleep(dur + 50)
+        if (aborted) break
+        clickCountRef.current++
+        setPos((p) => ({ ...p, clicking: true }))
+        await sleep(130)
+        const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
+        const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
+        option.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
+        option.dispatchEvent(new MouseEvent('mousedown', center))
+        option.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
+        option.dispatchEvent(new MouseEvent('mouseup', center))
+        ;(option as HTMLElement).click()
+        await sleep(80)
+        setPos((p) => ({ ...p, clicking: false }))
+        await sleep(170)
+        break
+      }
+
+      case 'dismiss': {
+        const listbox = document.querySelector('[role="listbox"]')
+        if (listbox) {
+          listbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+        }
+        await sleep(140)
+        break
+      }
+
+      case 'wait': {
+        await sleep(step.delay || 350)
+        break
+      }
+    }
+  }
+
   const processQueue = useCallback(async () => {
     const queue = getQueue()
     if (processingRef.current || queue.length === 0) return
     processingRef.current = true
     aborted = false
 
-    // Start from the center of the command bar (offset by 240px sidebar)
-    const startX = 240 + (window.innerWidth - 240) / 2
-    const startY = window.innerHeight - 52
-    lastPosRef.current = { x: startX, y: startY }
-    setPos((p) => ({ ...p, x: startX, y: startY, moveDuration: 0 }))
+    // If the cursor was recently active, resume from its last position.
+    // Otherwise start from the center of the command bar.
+    const hasRecentPos = lastPosRef.current.x >= 0 && lastPosRef.current.y >= 0
+    if (!hasRecentPos) {
+      const startX = 240 + (window.innerWidth - 240) / 2
+      const startY = window.innerHeight - 52
+      lastPosRef.current = { x: startX, y: startY }
+      setPos((p) => ({ ...p, x: startX, y: startY, moveDuration: 0 }))
+    }
 
     // Small delay so the opacity transition has a frame to start from
     await sleep(30)
     setPos((p) => ({ ...p, visible: true }))
-    await sleep(250) // let fade-in complete
+    await sleep(hasRecentPos ? 80 : 250) // shorter fade-in when resuming
 
-    while (queue.length > 0) {
-      if (aborted) break
-      const item = queue.shift()!
+    // Outer loop: keep cursor visible as long as the agent is executing
+    outer: while (true) {
+      // Process all queued items
+      while (queue.length > 0) {
+        if (aborted) break outer
+        const item = queue.shift()!
 
-      for (const step of item.steps) {
-        if (aborted) break
-        switch (step.type) {
-          case 'scroll-to': {
-            if (!step.selector) break
-            const el = await waitForElement(step.selector, 3000)
-            if (!el || aborted) break
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            await sleep(350)
-            break
-          }
+        for (const step of item.steps) {
+          if (aborted) break
+          await runStep(step)
+        }
 
-          case 'move': {
-            if (!step.selector) break
-            const el = await waitForElement(step.selector, 2500)
-            if (!el || aborted) break
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-            await sleep(100)
-            const rect = el.getBoundingClientRect()
-            const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-            await sleep(dur + 50)
-            break
-          }
+        item.resolve()
 
-          case 'click': {
-            if (!step.selector) break
-            const el = await waitForElement(step.selector, 2500)
-            if (!el || aborted) break
-            const clickLabel = getClickLabel(el)
-            if (clickLabel) useAgentUIStore.getState().setCurrentAction(clickLabel)
-            // Skip scroll for elements inside portals/dropdowns
-            const inPortal = el.closest('[data-radix-popper-content-wrapper]') || el.closest('[role="listbox"]')
-            if (!inPortal) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              await sleep(100)
-            }
-            const rect = el.getBoundingClientRect()
-            const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-            await sleep(dur + 50)
-            if (aborted) break
-            // Click animation
-            clickCountRef.current++
-            setPos((p) => ({ ...p, clicking: true }))
-            await sleep(130)
-            // Dispatch full pointer event sequence (Radix UI needs this)
-            const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
-            const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
-            el.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
-            el.dispatchEvent(new MouseEvent('mousedown', center))
-            el.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
-            el.dispatchEvent(new MouseEvent('mouseup', center))
-            ;(el as HTMLElement).click()
-
-            // Handle form submit buttons (type="submit" inside a <form>).
-            // .click() triggers React's onClick via event delegation, but
-            // for submit buttons the form's onSubmit needs an explicit nudge.
-            if (el instanceof HTMLButtonElement && el.type === 'submit') {
-              const form = el.closest('form')
-              if (form) {
-                form.requestSubmit(el)
-              }
-            }
-
-            await sleep(80)
-            setPos((p) => ({ ...p, clicking: false }))
-            await sleep(170)
-            break
-          }
-
-          case 'type': {
-            if (!step.selector || !step.text) break
-            const el = await waitForElement(step.selector, 3000) as HTMLInputElement | HTMLTextAreaElement | null
-            if (!el || aborted) break
-            useAgentUIStore.getState().setCurrentAction(getTypeLabel(el))
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            await sleep(140)
-            const rect = el.getBoundingClientRect()
-            // Move to field
-            const dur = moveTo(rect.left + 40, rect.top + rect.height / 2)
-            await sleep(dur + 50)
-            // Click to focus
-            clickCountRef.current++
-            setPos((p) => ({ ...p, clicking: true }))
-            await sleep(100)
-            setPos((p) => ({ ...p, clicking: false }))
-            el.focus()
-            el.click()
-            await sleep(130)
-            if (aborted) break
-            // Paste the full value at once
-            const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
-            const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set
-            const newValue = (el.value || '') + step.text
-            if (nativeSetter) {
-              nativeSetter.call(el, newValue)
-            } else {
-              el.value = newValue
-            }
-            el.dispatchEvent(new Event('input', { bubbles: true }))
-            el.dispatchEvent(new Event('change', { bubbles: true }))
-            await sleep(100)
-            break
-          }
-
-          case 'select-option': {
-            if (!step.text) break
-            useAgentUIStore.getState().setCurrentAction(`Selecting ${step.text}`)
-            const option = await waitForElementByText('[role="option"]', step.text, 3000)
-            if (!option || aborted) break
-            const inPortal = option.closest('[data-radix-popper-content-wrapper]') || option.closest('[role="listbox"]')
-            if (!inPortal) {
-              option.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              await sleep(100)
-            }
-            const rect = option.getBoundingClientRect()
-            const dur = moveTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-            await sleep(dur + 50)
-            if (aborted) break
-            clickCountRef.current++
-            setPos((p) => ({ ...p, clicking: true }))
-            await sleep(130)
-            const center = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true }
-            const pointerOpts = { ...center, pointerId: 1, pointerType: 'mouse' as const }
-            option.dispatchEvent(new PointerEvent('pointerdown', pointerOpts))
-            option.dispatchEvent(new MouseEvent('mousedown', center))
-            option.dispatchEvent(new PointerEvent('pointerup', pointerOpts))
-            option.dispatchEvent(new MouseEvent('mouseup', center))
-            ;(option as HTMLElement).click()
-            await sleep(80)
-            setPos((p) => ({ ...p, clicking: false }))
-            await sleep(170)
-            break
-          }
-
-          case 'dismiss': {
-            const listbox = document.querySelector('[role="listbox"]')
-            if (listbox) {
-              listbox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-            }
-            await sleep(140)
-            break
-          }
-
-          case 'wait': {
-            await sleep(step.delay || 350)
-            break
-          }
+        if (queue.length > 0) {
+          await sleep(200)
         }
       }
 
-      // Resolve this queue item's promise so the caller can proceed
-      item.resolve()
-
-      // If more items are queued, add a brief inter-tool pause
-      if (queue.length > 0) {
-        await sleep(200)
-      }
+      // Queue is empty — wait for more work if the agent is still executing.
+      // Stop early when toolsDone fires (final response streaming).
+      const state = useAgentUIStore.getState()
+      if (aborted || !state.executing || state.toolsDone) break
+      const gotMore = await waitForMoreWork()
+      if (!gotMore) break
     }
 
     // Fade out gracefully
@@ -294,7 +328,23 @@ export function AgentCursor() {
 
   const executing = useAgentUIStore((s) => s.executing)
 
-  const cursor = executing
+  // Keep showing orb style until cursor is fully hidden, so it doesn't
+  // snap to arrow cursor during the fade-out.
+  const showOrbRef = useRef(false)
+  if (executing) showOrbRef.current = true
+  if (!pos.visible && !executing) showOrbRef.current = false
+  const showOrb = showOrbRef.current
+
+  // Reset cursor start position only when the full execution session ends
+  const prevExecutingRef = useRef(false)
+  useEffect(() => {
+    if (prevExecutingRef.current && !executing) {
+      lastPosRef.current = { x: -1, y: -1 }
+    }
+    prevExecutingRef.current = executing
+  }, [executing])
+
+  const cursor = showOrb
     ? { size: 18, left: pos.x - 9, top: pos.y - 9, rippleOffset: '1px', filter: 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' }
     : { size: 28, left: pos.x - 4, top: pos.y - 2, rippleOffset: '6px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }
 
@@ -314,7 +364,7 @@ export function AgentCursor() {
         filter: cursor.filter,
       }}
     >
-      {executing ? (
+      {showOrb ? (
         <div
           style={{
             width: `${cursor.size}px`,
@@ -348,7 +398,7 @@ export function AgentCursor() {
               height: '16px',
               opacity: 0.8,
               left: cursor.rippleOffset,
-              top: executing ? cursor.rippleOffset : '4px',
+              top: showOrb ? cursor.rippleOffset : '4px',
             }}
           />
           <div
@@ -362,7 +412,7 @@ export function AgentCursor() {
               height: '16px',
               opacity: 0.3,
               left: cursor.rippleOffset,
-              top: executing ? cursor.rippleOffset : '4px',
+              top: showOrb ? cursor.rippleOffset : '4px',
             }}
           />
         </>

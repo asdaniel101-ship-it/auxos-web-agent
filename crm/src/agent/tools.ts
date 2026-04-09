@@ -474,6 +474,12 @@ export function createCrmTools(getStore: () => CrmStore): AuxosTool[] {
           company: d.companyId
             ? store.companies.find((c) => c.id === d.companyId)?.name ?? null
             : null,
+          contacts: d.contactIds
+            .map((cid) => {
+              const c = store.contacts.find((ct) => ct.id === cid)
+              return c ? { id: c.id, name: `${c.firstName} ${c.lastName}`, email: c.email } : null
+            })
+            .filter(Boolean),
         }))
         return { success: true, data }
       },

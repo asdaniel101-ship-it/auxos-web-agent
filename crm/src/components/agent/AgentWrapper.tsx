@@ -100,14 +100,24 @@ export function AgentWrapper() {
   })
 
   const executing = useAgentUIStore((s) => s.executing)
+  const toolsDone = useAgentUIStore((s) => s.toolsDone)
   const actionHistory = useAgentUIStore((s) => s.actionHistory)
 
   const handleEvent = useCallback((event: AuxosEvent) => {
-    const { executing: isExec, startExecution, setCurrentAction, finishExecution, askUser } = useAgentUIStore.getState()
+    const { executing: isExec, startExecution, setCurrentAction, completeCurrentAction, setToolsDone, finishExecution, askUser } = useAgentUIStore.getState()
     switch (event.type) {
       case 'tool_start':
         if (!isExec) startExecution()
-        setCurrentAction(getToolLabel(event.toolName, event.input))
+        setCurrentAction(getToolLabel(event.toolName, event.input), 'tool')
+        break
+      case 'tool_end':
+        completeCurrentAction()
+        break
+      case 'tools_done':
+        // Only set the flag when tools actually ran (isExec true).
+        // For text-only responses (no tool_start fired), skip —
+        // the panel will transition via isLoading going false.
+        if (isExec) setToolsDone()
         break
       case 'ask_user':
         askUser(event.question, event.respond)
@@ -177,6 +187,7 @@ export function AgentWrapper() {
       onIdleDismiss={dismiss}
       onOpenChange={setPanelOpen}
       executing={executing}
+      toolsDone={toolsDone}
       actionHistory={actionHistory}
     />
   )

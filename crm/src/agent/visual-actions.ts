@@ -555,6 +555,12 @@ function updateTaskSteps(input: Record<string, unknown>): Step[] {
 
 // ─── List with filters ───
 
+/** Read the displayed text of a select trigger (empty string if not found). */
+function selectTriggerValue(ariaLabel: string): string {
+  const trigger = document.querySelector(`[aria-label="${ariaLabel}"]`)
+  return trigger?.textContent?.trim() ?? ''
+}
+
 function listDealsSteps(input: Record<string, unknown>): Step[] {
   const stage = (input.stage as string) || ''
   const owner = (input.owner as string) || ''
@@ -568,7 +574,8 @@ function listDealsSteps(input: Record<string, unknown>): Step[] {
     { type: 'wait', delay: 400 },
   ]
 
-  if (stage) {
+  // Only apply filters that aren't already set to the desired value
+  if (stage && selectTriggerValue('Filter by stage') !== stage) {
     steps.push(
       { type: 'click', selector: '[aria-label="Filter by stage"]' },
       { type: 'wait', delay: 300 },
@@ -577,7 +584,7 @@ function listDealsSteps(input: Record<string, unknown>): Step[] {
     )
   }
 
-  if (owner) {
+  if (owner && selectTriggerValue('Filter by owner') !== owner) {
     steps.push(
       { type: 'click', selector: '[aria-label="Filter by owner"]' },
       { type: 'wait', delay: 300 },

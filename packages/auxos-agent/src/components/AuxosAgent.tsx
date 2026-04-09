@@ -11,7 +11,7 @@ import type { AuxosConfig } from '../types'
 import type { OrbState } from './SiriOrb'
 import type { ActionStep } from './AgentPanel'
 
-export function AuxosAgent(config: AuxosConfig & { actionHistory?: ActionStep[] }) {
+export function AuxosAgent(config: AuxosConfig & { actionHistory?: ActionStep[]; toolsDone?: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isOrbHovered, setIsOrbHovered] = useState(false)
   const theme = useMemo(() => createTheme(config.theme || {}), [config.theme])
@@ -31,7 +31,6 @@ export function AuxosAgent(config: AuxosConfig & { actionHistory?: ActionStep[] 
   const isIdle = config.isIdle ?? false
   const idleMessage = config.idleMessage ?? ''
 
-  const isExecuting = config.executing ?? false
   const orbState: OrbState = isOpen ? 'active' : isIdle ? 'alert' : 'dormant'
 
   const updateOpen = useCallback((open: boolean) => {
@@ -152,6 +151,7 @@ export function AuxosAgent(config: AuxosConfig & { actionHistory?: ActionStep[] 
         name={config.name}
         theme={theme}
         actionHistory={config.actionHistory}
+        toolsDone={config.toolsDone}
       />
     </>
   )
