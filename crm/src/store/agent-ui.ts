@@ -5,19 +5,24 @@ import { create } from 'zustand'
 export interface ActionStep {
   label: string
   status: 'active' | 'completed'
+  /** 'tool' = tool invocation label (shown in pill only, hidden from history) */
+  source?: 'tool'
 }
 
 interface AgentUIStore {
   executing: boolean
-  currentAction: string | null
+  toolsDone: boolean
   pendingQuestion: string | null
   respondFn: ((answer: string) => void) | null
   panelOpen: boolean
   actionHistory: ActionStep[]
 
   startExecution: () => void
-  setCurrentAction: (label: string | null) => void
+  setCurrentAction: (label: string | null, source?: 'tool') => void
+  /** Atomically complete the current action and set the next one (avoids intermediate renders). */
+  completeAndSetNext: (label: string) => void
   completeCurrentAction: () => void
+  setToolsDone: () => void
   finishExecution: () => void
   askUser: (question: string, respond: (answer: string) => void) => void
   answerQuestion: (answer: string) => void
@@ -27,10 +32,17 @@ interface AgentUIStore {
 
 let finishTimer: ReturnType<typeof setTimeout> | null = null
 
+/** Mark all 'active' steps as 'completed'. */
+function completeAllActive(history: ActionStep[]): ActionStep[] {
+  return history.map((s) =>
+    s.status === 'active' ? { ...s, status: 'completed' as const } : s
+  )
+}
+
 function createAgentUIStore() {
   return create<AgentUIStore>((set, get) => ({
     executing: false,
-    currentAction: null,
+    toolsDone: false,
     pendingQuestion: null,
     respondFn: null,
     panelOpen: false,
@@ -38,44 +50,46 @@ function createAgentUIStore() {
 
     startExecution: () => {
       if (finishTimer) { clearTimeout(finishTimer); finishTimer = null }
-      set({ executing: true, currentAction: null, actionHistory: [] })
+      set({ executing: true, toolsDone: false, actionHistory: [] })
     },
-    setCurrentAction: (label) => {
-      const { actionHistory } = get()
-      // Mark previous active step as completed, add new active step
-      const updated = actionHistory.map((s) =>
-        s.status === 'active' ? { ...s, status: 'completed' as const } : s
-      )
+    setCurrentAction: (label, source) => {
+      const updated = completeAllActive(get().actionHistory)
       if (label) {
-        updated.push({ label, status: 'active' })
+        updated.push({ label, status: 'active', ...(source && { source }) })
       }
-      set({ currentAction: label, actionHistory: updated })
+      set({ actionHistory: updated })
+    },
+    completeAndSetNext: (label) => {
+      const updated = completeAllActive(get().actionHistory)
+      updated.push({ label, status: 'active' })
+      set({ actionHistory: updated })
     },
     completeCurrentAction: () => {
-      const { actionHistory } = get()
+      set({ actionHistory: completeAllActive(get().actionHistory) })
+    },
+    setToolsDone: () => {
       set({
-        actionHistory: actionHistory.map((s) =>
-          s.status === 'active' ? { ...s, status: 'completed' as const } : s
-        ),
+        toolsDone: true,
+        actionHistory: completeAllActive(get().actionHistory),
       })
     },
     finishExecution: () => {
+      // Clear toolsDone immediately to prevent stale state if user sends
+      // another message quickly. The 600ms debounce only delays clearing
+      // `executing` (used by cursor animation).
+      set({ toolsDone: false })
       if (finishTimer) clearTimeout(finishTimer)
       finishTimer = setTimeout(() => {
         finishTimer = null
-        const { actionHistory } = get()
         set({
           executing: false,
-          currentAction: null,
           pendingQuestion: null,
           respondFn: null,
-          actionHistory: actionHistory.map((s) =>
-            s.status === 'active' ? { ...s, status: 'completed' as const } : s
-          ),
+          actionHistory: completeAllActive(get().actionHistory),
         })
       }, 600)
     },
-    askUser: (question, respond) => set({ pendingQuestion: question, respondFn: respond, currentAction: null }),
+    askUser: (question, respond) => set({ pendingQuestion: question, respondFn: respond }),
     answerQuestion: (answer) => {
       const { respondFn } = get()
       if (respondFn) {

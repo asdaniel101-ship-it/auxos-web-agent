@@ -3,12 +3,15 @@
 import { useEffect, useRef, KeyboardEvent, useState } from 'react'
 import { Send, Square, ChevronRight, Check } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { SiriOrb } from './SiriOrb'
 import type { AuxosTheme, DisplayMessage } from '../types'
 
 export interface ActionStep {
   label: string
   status: 'active' | 'completed'
+  /** Tool-invocation entries show in the pill but are hidden from the completed steps list. */
+  source?: 'tool'
 }
 
 interface AgentPanelProps {
@@ -22,6 +25,8 @@ interface AgentPanelProps {
   name?: string
   theme: AuxosTheme
   actionHistory?: ActionStep[]
+  /** When true, all tools are done and Claude is generating the final response. */
+  toolsDone?: boolean
 }
 
 const commandBarKeyframes = `
@@ -54,6 +59,7 @@ export function AgentPanel({
   name = 'Assistant',
   theme,
   actionHistory = [],
+  toolsDone = false,
 }: AgentPanelProps) {
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -61,15 +67,28 @@ export function AgentPanel({
   const [shrinking, setShrinking] = useState(false)
   const prevLoadingRef = useRef(false)
 
-  // Detect execution start → trigger shrink animation
+  // Two-phase state machine: idle ↔ executing.
+  // Executing = compact action pill only. Idle = chat bar / result card.
+  const [phase, setPhase] = useState<'idle' | 'executing'>('idle')
+
+  // idle → executing: when isLoading transitions false→true with messages
   useEffect(() => {
     if (isLoading && !prevLoadingRef.current && messages.length > 0) {
       setShrinking(true)
+      setPhase('executing')
       const timer = setTimeout(() => setShrinking(false), 400)
+      prevLoadingRef.current = isLoading
       return () => clearTimeout(timer)
     }
     prevLoadingRef.current = isLoading
   }, [isLoading, messages.length])
+
+  // executing → idle: when isLoading goes false (fully done or error)
+  useEffect(() => {
+    if (!isLoading && phase === 'executing') {
+      setPhase('idle')
+    }
+  }, [isLoading, phase])
 
   useEffect(() => {
     if (isOpen && !isLoading) setTimeout(() => inputRef.current?.focus(), 100)
@@ -106,13 +125,17 @@ export function AgentPanel({
   const hasMessages = messages.length > 0
   const lastMessage = messages[messages.length - 1]
   const hasResult = hasMessages && !isLoading && lastMessage?.type === 'assistant'
-  const completedCount = actionHistory.filter((s) => s.status === 'completed').length
+  // Tool-source entries show in the pill (activeStep) but not in the completed history.
+  const completedSteps = actionHistory.filter((s) => s.status === 'completed' && s.source !== 'tool')
   const activeStep = actionHistory.find((s) => s.status === 'active')
 
-  const finalResponse = hasResult ? lastMessage.content : streamingText || null
-
-  // During execution: hide the command bar, show simple action pill
-  const isExecuting = isLoading && !finalResponse && hasMessages
+  // Only stream the response after ALL tools are done (toolsDone flag from zustand).
+  // This prevents intermediate reasoning text from flashing during tool chains.
+  const isStreaming = phase === 'executing' && toolsDone && !!streamingText
+  const finalResponse = hasResult
+    ? lastMessage.content
+    : isStreaming ? streamingText : null
+  const isExecuting = phase === 'executing' && !isStreaming
   const showCommandBar = !isExecuting || shrinking
 
   return (
@@ -151,7 +174,7 @@ export function AgentPanel({
             }}
           >
             {/* Collapsed steps header */}
-            {completedCount > 0 && (
+            {completedSteps.length > 0 && (
               <button
                 onClick={() => setStepsExpanded(!stepsExpanded)}
                 style={{
@@ -182,7 +205,7 @@ export function AgentPanel({
                   <Check style={{ width: '10px', height: '10px', color: '#16a34a' }} />
                 </div>
                 <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                  {completedCount} step{completedCount !== 1 ? 's' : ''} completed
+                  {completedSteps.length} step{completedSteps.length !== 1 ? 's' : ''} completed
                 </span>
                 <ChevronRight
                   style={{
@@ -200,9 +223,7 @@ export function AgentPanel({
             {/* Expanded step list */}
             {stepsExpanded && (
               <div style={{ padding: '8px 16px', borderBottom: '1px solid #f1f5f9' }}>
-                {actionHistory
-                  .filter((s) => s.status === 'completed')
-                  .map((step, i) => (
+                {completedSteps.map((step, i) => (
                     <div
                       key={i}
                       style={{
@@ -245,6 +266,7 @@ export function AgentPanel({
                 }}
               >
                 <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
                   components={{
                     p: ({ children }) => <p style={{ margin: '0 0 8px', lineHeight: 1.6 }}>{children}</p>,
                     strong: ({ children }) => <strong style={{ fontWeight: 600, color: '#1e293b' }}>{children}</strong>,
@@ -259,11 +281,29 @@ export function AgentPanel({
                       </code>
                     ),
                     hr: () => <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '8px 0' }} />,
+                    table: ({ children }) => (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0', fontSize: '12px' }}>
+                        {children}
+                      </table>
+                    ),
+                    thead: ({ children }) => (
+                      <thead style={{ borderBottom: '2px solid #e2e8f0' }}>{children}</thead>
+                    ),
+                    th: ({ children }) => (
+                      <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
+                        {children}
+                      </th>
+                    ),
+                    td: ({ children }) => (
+                      <td style={{ padding: '5px 8px', borderBottom: '1px solid #f1f5f9', color: '#475569' }}>
+                        {children}
+                      </td>
+                    ),
                   }}
                 >
                   {finalResponse}
                 </ReactMarkdown>
-                {isLoading && (
+                {isStreaming && (
                   <span
                     style={{
                       display: 'inline-block',
@@ -327,7 +367,7 @@ export function AgentPanel({
                 }}
               />
             </span>
-            {activeStep?.label || 'Working...'}
+            {activeStep?.label || 'Thinking...'}
 
             {/* Stop button */}
             <button
@@ -370,7 +410,9 @@ export function AgentPanel({
               fontFamily: theme.fonts.body,
               animation: shrinking
                 ? 'auxos-bar-shrink 0.4s cubic-bezier(0.4, 0, 1, 1) forwards'
-                : 'auxos-bar-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                : hasResult
+                  ? 'none'
+                  : 'auxos-bar-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
               transformOrigin: 'center bottom',
             }}
           >

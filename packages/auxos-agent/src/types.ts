@@ -126,6 +126,7 @@ export type AuxosEvent =
   | { type: 'tool_start'; toolName: string; input: Record<string, unknown> }
   | { type: 'tool_end'; toolName: string; result: ToolResult }
   | { type: 'response_end' }
+  | { type: 'tools_done' }
   | { type: 'error'; error: string; retryable: boolean }
   | { type: 'stopped' }
   | { type: 'done' }
