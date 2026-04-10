@@ -8,6 +8,7 @@ import { getCrmTools } from '@/agent/client-tools'
 import { useIdleDetection } from '@/hooks/useIdleDetection'
 import { cancelAllSteps } from '@/components/agent/AgentCursor'
 import { useAgentUIStore, getToolLabel } from '@/store/agent-ui'
+import { toast } from '@/components/ui/use-toast'
 import type { AuxosEvent } from '@auxos/agent'
 import type { CrmStore } from '@/store'
 
@@ -130,6 +131,7 @@ export function AgentWrapper() {
         if (isExec) finishExecution()
         break
       case 'error':
+        toast({ variant: 'destructive', title: 'Something went wrong', description: event.error })
         if (isExec) finishExecution()
         break
     }
