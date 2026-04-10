@@ -63,6 +63,7 @@ export function AgentPanel({
 }: AgentPanelProps) {
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const responseRef = useRef<HTMLDivElement>(null)
   const [stepsExpanded, setStepsExpanded] = useState(false)
   const [shrinking, setShrinking] = useState(false)
   const prevLoadingRef = useRef(false)
@@ -105,6 +106,12 @@ export function AgentPanel({
   useEffect(() => {
     if (!isOpen) setStepsExpanded(false)
   }, [isOpen])
+
+  // Auto-scroll response area to bottom during streaming
+  useEffect(() => {
+    const el = responseRef.current
+    if (el && streamingText) el.scrollTop = el.scrollHeight
+  }, [streamingText])
 
   function handleSend(text?: string) {
     const content = (text ?? input).trim()
@@ -163,6 +170,9 @@ export function AgentPanel({
           <div
             style={{
               width: '580px',
+              maxHeight: '33vh',
+              display: 'flex',
+              flexDirection: 'column',
               background: 'white',
               border: '1px solid #e2e8f0',
               borderRadius: '16px',
@@ -256,7 +266,7 @@ export function AgentPanel({
             )}
 
             {/* Assistant response */}
-            <div style={{ padding: '14px 16px' }}>
+            <div ref={responseRef} style={{ padding: '14px 16px', overflowY: 'auto', minHeight: 0, flex: 1 }}>
               <div
                 style={{
                   fontSize: '13px',

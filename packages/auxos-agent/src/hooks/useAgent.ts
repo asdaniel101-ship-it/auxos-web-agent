@@ -459,13 +459,6 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           return
         }
         emit({ type: 'error', error: error.message, retryable: false })
-        setDisplayMessages([
-          ...newDisplay,
-          {
-            type: 'assistant',
-            content: `Sorry, I encountered an error: ${error.message}`,
-          },
-        ])
       } finally {
         abortRef.current = null
         setIsLoading(false)
